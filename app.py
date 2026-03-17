@@ -22,8 +22,6 @@ CTRL + S  → Save file
 Start typing to edit the document.
 """
 
-# Salvar arquivo depois de um CTRL+N, abre um campo de texto pra inserir local de armazenamento de aquivo
-
 class SuperNano(App):
 
     CSS_PATH = "style.tcss"
@@ -44,6 +42,7 @@ class SuperNano(App):
         self._loading = False
         self.confirm_action = None
         self._confirm_quit = False
+        self._original_text = ""
         if len(sys.argv) > 1:
             self.current_path = Path(sys.argv[1])
 
@@ -62,7 +61,6 @@ class SuperNano(App):
             placeholder="Enter file path: ~/Documents/file.txt",
             id="path_input"
         )
-        # self.editor = TextArea("", id="editor", language="python")
         self.editor = TextArea.code_editor(
             "",
             id="editor",
@@ -91,6 +89,7 @@ class SuperNano(App):
         yield Footer()
 
     ###==================== ACTIONS ====================###
+    
     def action_save(self):
         if self.current_path:
             try:
@@ -122,21 +121,16 @@ class SuperNano(App):
 
     def action_new_file(self):
         editor = self.query_one("#editor", TextArea)
-
         self._loading = True
         editor.text = ""
+        self._original_text = ""
         self._loading = False
+        self.is_dirty = False
 
         editor.language = None
         self.current_path = None
-        self.is_dirty = False
 
         self.status.update("New file (unsaved)")
-        # Feature: 
-        #       - CREATE TEMPORARY FILE
-        #       - RELOAD THE SIDEBAR LIST
-        # IF USER LEAVE THE EDITOR BEFORE SAVING, LOAD THE TEMPORARY FILE
-        # CREATE A "TempViewer" FOR THE USER BROWSE THROW TEMP FILES (Max temp files: 3)
 
     def action_quit(self):
         if self.is_dirty:
@@ -156,57 +150,8 @@ class SuperNano(App):
 
     ###==================== ACTIONS ====================###
 
-    def detect_language_from_content(self):
-        editor = self.query_one("#editor", TextArea)
-        try:
-            lexer = guess_lexer(editor.text)
-            # 🔥 pega o primeiro alias válido
-            if lexer.aliases:
-                editor.language = lexer.aliases[0]
-            else:
-                editor.language = None
-        except Exception:
-            editor.language = None
-        editor.refresh()
-
-    def load_file(self, path_str):
-        try:
-            path = Path(path_str)
-            editor = self.query_one("#editor", TextArea)
-
-            self._loading = True
-            editor.text = path.read_text(encoding="utf-8")
-            self._loading = False
-
-            self.is_dirty = False
-            self.set_language(path)
-            self.current_path = path
-
-            self.status.update(f"{path} | {editor.language} | UTF-8")
-
-        except Exception as e:
-            self.status.update(f"Error when opening: {e}")
-
-    def prompt_save_as(self):
-        input_widget = self.query_one("#path_input", Input)
-        input_widget.display = True
-        input_widget.placeholder = "Save as: ./file.txt"
-        input_widget.value = "./"
-        input_widget.focus()
-
-        self.input_mode = "save"
-        self.status.update("Enter path to save file")
-
-    def refresh_file_list(self):
-        self.file_list.clear()
-
-        for f in Path(".").iterdir():
-            if f.is_file():
-                item = ListItem(Static(f.name))
-                item.path = f
-                self.file_list.append(item)
-
     ###==================== ON EVENT ====================###
+    
     def on_input_submitted(self, event: Input.Submitted):
         value = event.value
 
@@ -253,12 +198,8 @@ class SuperNano(App):
         if not hasattr(event.item, "path"):
             return
 
-        # if self.is_dirty:
-        #     self.status.update("Unsaved changes! Press CTRL+S or CTRL+Q again to force.")
-        #     return
         if self.is_dirty:
             if self.confirm_action:
-                # segundo clique → executa
                 action = self.confirm_action
                 self.confirm_action = None
                 self.is_dirty = False
@@ -270,17 +211,67 @@ class SuperNano(App):
             return
         self.load_file(str(event.item.path))
         
-
     def on_mount(self):
         if self.current_path and self.current_path.exists():
             self.load_file(str(self.current_path.absolute()))
     
     def on_text_area_changed(self, event):
-        if self._loading:
-            return
-        self.is_dirty = True
+        editor = self.query_one("#editor", TextArea)
+        self.is_dirty = (editor.text != self._original_text)
+        dirty_flag = "*" if self.is_dirty else ""
+        if self.current_path == None:
+            self.status.update(f"SuperNanno | {editor.language} | UTF-8")
+        else:    
+            self.status.update(f"{self.current_path}{dirty_flag} | {editor.language} | UTF-8")
 
     ###==================== ON EVENT ====================###
+
+    def detect_language_from_content(self):
+        editor = self.query_one("#editor", TextArea)
+        try:
+            lexer = guess_lexer(editor.text)
+            if lexer.aliases:
+                editor.language = lexer.aliases[0]
+            else:
+                editor.language = None
+        except Exception:
+            editor.language = None
+        editor.refresh()
+
+    def load_file(self, path_str):
+        try:
+            path = Path(path_str)
+            editor = self.query_one("#editor", TextArea)
+            self._loading = True
+            editor.text = path.read_text(encoding="utf-8")
+            self._original_text = editor.text
+            self.set_language(path)
+            self.current_path = path
+            self.is_dirty = False
+            self._loading = False
+            self.status.update(f"{path} | {editor.language} | UTF-8")
+
+        except Exception as e:
+            self.status.update(f"Error when opening: {e}")
+
+    def prompt_save_as(self):
+        input_widget = self.query_one("#path_input", Input)
+        input_widget.display = True
+        input_widget.placeholder = "Save as: ./file.txt"
+        input_widget.value = "./"
+        input_widget.focus()
+
+        self.input_mode = "save"
+        self.status.update("Enter path to save file")
+
+    def refresh_file_list(self):
+        self.file_list.clear()
+
+        for f in Path(".").iterdir():
+            if f.is_file():
+                item = ListItem(Static(f.name))
+                item.path = f
+                self.file_list.append(item)
 
     def set_language(self, path: Path):
         ext = path.suffix.lower()
