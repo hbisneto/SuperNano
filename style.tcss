@@ -1,0 +1,23 @@
+#sidebar {
+    width: 30;
+    border-right: tall $primary;
+    background: $surface;
+}
+
+#main {
+    width: 1fr;
+}
+
+#status {
+    background: $accent;
+    color: $text;
+    padding: 0 1;
+    height: 1;
+}
+
+.title {
+    background: $primary;
+    color: $text;
+    text-align: center;
+    text-style: bold;
+}
