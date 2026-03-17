@@ -2,10 +2,12 @@
     width: 30;
     border-right: tall $primary;
     background: $surface;
+    padding: 1;
 }
 
 #main {
     width: 1fr;
+    background: $background;
 }
 
 #status {
@@ -15,9 +17,19 @@
     height: 1;
 }
 
+#editor {
+    background: $background;
+    color: $text;
+}
+
+#files {
+    scrollbar-gutter: stable;
+}
+
 .title {
     background: $primary;
     color: $text;
     text-align: center;
     text-style: bold;
+    padding: 0 1;
 }
