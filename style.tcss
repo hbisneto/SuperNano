@@ -1,8 +1,22 @@
+$primary: #3b82f6;
+$accent: #22c55e;
+$background: #1F1F1F;
+$surface: #1F1F1F;
+$text: #ffffff;
+$muted: #94a3b8;
+
+Screen {
+    background: $background;
+    color: $text;
+}
+
+Horizontal {}
+Vertical {}
+
 #sidebar {
-    width: 30;
-    border-right: tall $primary;
+    width: 50;
     background: $surface;
-    padding: 1;
+    border-right: tall $primary;
 }
 
 #main {
@@ -10,26 +24,72 @@
     background: $background;
 }
 
-#status {
-    background: $accent;
+.title {
+    background: #454990;
     color: $text;
-    padding: 0 1;
-    height: 1;
+    text-style: bold;
+    text-align: center;
 }
 
-#editor {
+#files {}
+ListView {}
+
+ListItem {
+    color: $text;
+}
+
+ListItem.--highlight {
+    background: $primary;
+    color: $background;
+}
+
+ListItem:focus {
+    background: $accent;
+    color: $background;
+}
+
+#editor {}
+
+TextArea {
+    background: $background;
+    color: #d1d5db;
+}
+
+#path_input {}
+
+Input {
     background: $background;
     color: $text;
+    border: tall $muted;
 }
 
-#files {
-    scrollbar-gutter: stable;
+Input:focus {
+    border: tall $accent;
 }
 
-.title {
-    background: $primary;
+#status {
+    background: $accent;
+    color: $background;
+}
+
+#status.error {
+    background: #ef4444;
+}
+
+#status.warning {
+    background: #f59e0b;
+}
+
+#status.success {
+    background: #22c55e;
+}
+
+Header {
+    background: $surface;
     color: $text;
-    text-align: center;
-    text-style: bold;
-    padding: 0 1;
+}
+
+Footer {
+    background: #454990;
+    color: $muted;
 }

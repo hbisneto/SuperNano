@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -7,7 +8,7 @@ from textual.containers import Horizontal, Vertical
 from pygments.lexers import guess_lexer
 
 TEXT = """\
-# SuperNano Editor
+# SuperNanno 0.1.5
 
 Welcome! This editor works like a simple system text editor.
 
@@ -22,8 +23,7 @@ CTRL + S  → Save file
 Start typing to edit the document.
 """
 
-class SuperNano(App):
-
+class SuperNanno(App):
     CSS_PATH = "style.tcss"
     BINDINGS = [
         ("ctrl+f", "search", "Search"),
@@ -68,7 +68,7 @@ class SuperNano(App):
         )
         self.editor.text = TEXT
 
-        self.status = Static("SuperNano Ready", id="status")
+        self.status = Static("SuperNanno Ready", id="status")
         self.path_input.display = False
 
         yield Horizontal(
@@ -126,10 +126,9 @@ class SuperNano(App):
         self._original_text = ""
         self._loading = False
         self.is_dirty = False
-
         editor.language = None
         self.current_path = None
-
+        editor.focus()
         self.status.update("New file (unsaved)")
 
     def action_quit(self):
@@ -226,6 +225,18 @@ class SuperNano(App):
 
     ###==================== ON EVENT ====================###
 
+    async def __delayed_status__(self, delay, text):
+        await asyncio.sleep(delay)
+        self.status.update(text)
+
+    async def __reset_status__(self, delay, text):
+        await asyncio.sleep(delay)
+
+        self.status.remove_class("success")
+        self.status.remove_class("warning")
+        self.status.remove_class("error")
+        self.status.update(text)
+
     def detect_language_from_content(self):
         editor = self.query_one("#editor", TextArea)
         try:
@@ -241,6 +252,15 @@ class SuperNano(App):
     def load_file(self, path_str):
         try:
             path = Path(path_str)
+            if path.is_dir():
+                self.set_status(
+                    text="(!): Cannot open a directory. Select a file instead",
+                    delay=3,
+                    next_text=f"SuperNanno | UTF-8",
+                    status_type="warning"
+                )
+                return
+
             editor = self.query_one("#editor", TextArea)
             self._loading = True
             editor.text = path.read_text(encoding="utf-8")
@@ -252,8 +272,13 @@ class SuperNano(App):
             self.status.update(f"{path} | {editor.language} | UTF-8")
 
         except Exception as e:
-            self.status.update(f"Error when opening: {e}")
-
+            self.set_status(
+                text=f"(Error): Could not open file: {e}",
+                delay=3,
+                next_text=f"SuperNanno | Ready! | UTF-8",
+                status_type="error"
+            )
+    
     def prompt_save_as(self):
         input_widget = self.query_one("#path_input", Input)
         input_widget.display = True
@@ -266,7 +291,6 @@ class SuperNano(App):
 
     def refresh_file_list(self):
         self.file_list.clear()
-
         for f in Path(".").iterdir():
             if f.is_file():
                 item = ListItem(Static(f.name))
@@ -290,12 +314,10 @@ class SuperNano(App):
         }
 
         editor = self.query_one("#editor", TextArea)
-        # 1️⃣ tenta pela extensão
         lang = language_map.get(ext)
         if lang:
             editor.language = lang
         else:
-            # 2️⃣ fallback pelo conteúdo
             try:
                 lexer = guess_lexer(editor.text)
                 editor.language = lexer.aliases[0] if lexer.aliases else None
@@ -303,5 +325,27 @@ class SuperNano(App):
                 editor.language = None
         editor.refresh()
 
+    def set_status(self, text, delay=None, next_text=None, status_type="normal"):
+        self.status.remove_class("success")
+        self.status.remove_class("warning")
+        self.status.remove_class("error")
+
+        if status_type == "success":
+            self.status.add_class("success")
+        elif status_type == "error":
+            self.status.add_class("error")
+        elif status_type == "warning":
+            self.status.add_class("warning")
+
+        self.status.update(text)
+
+        if hasattr(self, "_status_task") and self._status_task:
+            self._status_task.cancel()
+
+        if delay and next_text:
+            self._status_task = self.run_worker(
+                self.__reset_status__(delay, next_text)
+            )
+
 if __name__ == "__main__":
-    SuperNano().run()
+    SuperNanno().run()
