@@ -45,6 +45,7 @@ class SuperNanno(App):
         self.confirm_action = None
         self._confirm_quit = False
         self._original_text = ""
+        self._status_locked = False
         if len(sys.argv) > 1:
             self.current_path = Path(sys.argv[1])
 
@@ -292,6 +293,8 @@ class SuperNanno(App):
             self.restore_session()
     
     def on_text_area_changed(self, event):
+        if self._loading or self._status_locked:
+            return
         editor = self.query_one("#editor", TextArea)
         self.is_dirty = (editor.text != self._original_text)
         dirty_flag = "*" if self.is_dirty else ""
@@ -312,13 +315,20 @@ class SuperNanno(App):
         await asyncio.sleep(delay)
         self.status.update(text)
 
-    async def __reset_status__(self, delay, text):
+    async def __unlock_status_after__(self, delay, next_text):
         await asyncio.sleep(delay)
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
-        self.status.update(text)
+
+        # self.status.update(next_text if next_text else "")
+        # self._status_locked = False
+        if next_text:
+            self.status.update(next_text)
+        else:
+            self.status.update(self.get_default_status())
+        self._status_locked = False
 
     def detect_language_from_content(self):
         editor = self.query_one("#editor", TextArea)
@@ -332,7 +342,15 @@ class SuperNanno(App):
             editor.language = None
         editor.refresh()
 
-    def load_file(self, path_str):
+    def get_default_status(self):
+        editor = self.query_one("#editor", TextArea)
+        dirty_flag = "*" if self.is_dirty else ""
+
+        if self.current_path:
+            return f"{self.current_path}{dirty_flag} | {editor.language} | UTF-8"
+        return f"SuperNanno | {editor.language} | UTF-8"
+
+    def load_file(self, path_str, silent=False):
         try:
             path = Path(path_str)
             if path.is_dir():
@@ -352,7 +370,8 @@ class SuperNanno(App):
             self.current_path = path
             self.is_dirty = False
             self._loading = False
-            self.status.update(f"{path} | {editor.language} | UTF-8")
+            if not silent:
+                self.status.update(f"{path} | {editor.language} | UTF-8")
 
         except Exception as e:
             self.set_status(
@@ -386,14 +405,17 @@ class SuperNanno(App):
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
-            last_file = config.get("session", {}).get("last_opened_file")
+            last_file = config.get("settings", {}).get("session", {}).get("last_opened_file", {})
             if last_file:
                 path = Path(last_file).expanduser()
                 if path.exists() and path.is_file():
-                    self.load_file(str(path))
+                    self._loading = True
+                    self.load_file(str(path), silent=True)
+                    self._loading = False
                     self.set_status(
                         f"(Session Restored): {path.name}",
                         delay=3,
+                        next_text=self.get_default_status(),
                         status_type="info"
                     )
         except Exception as e:
@@ -409,7 +431,6 @@ class SuperNanno(App):
                     config = json.load(f)
             else:
                 config = {}
-            # 🔥 estrutura consistente
             config["settings"]["session"] = {
                 "last_opened_file": str(file_path)
             }
@@ -447,6 +468,7 @@ class SuperNanno(App):
         editor.refresh()
 
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
+        self._status_locked = True
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
@@ -468,7 +490,8 @@ class SuperNanno(App):
 
         if delay and next_text:
             self._status_task = self.run_worker(
-                self.__reset_status__(delay, next_text)
+                self.__unlock_status_after__(delay, next_text)
+                # self.__reset_status__(delay, next_text)
             )
 
 if __name__ == "__main__":
