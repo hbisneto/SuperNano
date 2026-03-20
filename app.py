@@ -8,6 +8,8 @@ from textual.widgets import Static, TextArea, ListView, ListItem, Header, Footer
 from textual.containers import Horizontal, Vertical
 from pygments.lexers import guess_lexer
 
+from commands import save
+
 TEXT = """\
 # SuperNanno 0.1.5
 
@@ -94,27 +96,28 @@ class SuperNanno(App):
     ###==================== ACTIONS ====================###
     
     def action_save(self):
-        if self.current_path:
-            try:
-                editor = self.query_one("#editor", TextArea)
-                self.current_path.write_text(editor.text, encoding="utf-8")
-                self.set_status(
-                    text=f"(Saved): Your file is saved: {self.current_path.name}",
-                    delay=3,
-                    next_text=f"{self.current_path.name} | Ready! | UTF-8",
-                )
-                self.is_dirty = False
-                self._confirm_quit = False
-                self.refresh_file_list()
-            except Exception as e:
-                self.set_status(
-                    text=f"(Error): Could not save file: {e}",
-                    delay=3,
-                    next_text=f"SuperNanno | Ready! | UTF-8",
-                    status_type="error"
-                )
-        else:
-            self.prompt_save_as()
+        save.execute(self.ctx)
+        # if self.current_path:
+        #     try:
+        #         editor = self.query_one("#editor", TextArea)
+        #         self.current_path.write_text(editor.text, encoding="utf-8")
+        #         self.set_status(
+        #             text=f"(Saved): Your file is saved: {self.current_path.name}",
+        #             delay=3,
+        #             next_text=f"{self.current_path.name} | Ready! | UTF-8",
+        #         )
+        #         self.is_dirty = False
+        #         self._confirm_quit = False
+        #         self.refresh_file_list()
+        #     except Exception as e:
+        #         self.set_status(
+        #             text=f"(Error): Could not save file: {e}",
+        #             delay=3,
+        #             next_text=f"SuperNanno | Ready! | UTF-8",
+        #             status_type="error"
+        #         )
+        # else:
+        #     self.prompt_save_as()
 
     def action_search(self):
         input_widget = self.query_one("#path_input", Input)
@@ -437,6 +440,7 @@ class SuperNanno(App):
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
         except Exception as e:
+            # Security: Recreate config.json with default values
             self.set_status(f"(Save Session Error): {e}", delay=3, status_type="error")
 
     def set_language(self, path: Path):
