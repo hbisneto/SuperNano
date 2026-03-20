@@ -30,7 +30,7 @@ class SuperNanno(App):
         ("ctrl+f", "search", "Search"),
         ("ctrl+o", "open_path", "Open"),
         ("ctrl+n", "new_file", "New"),
-        ("ctrl+u", "quit", "Quit"), # MUDAR PARA Q
+        ("ctrl+q", "quit", "Quit"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+r", "read_file", "Read File"),
     ]
