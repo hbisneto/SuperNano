@@ -1,0 +1,34 @@
+{
+    "settings": {
+        "startup": [
+            {
+                "default_save_location": ""
+            }
+        ],
+        "session": {
+            "last_opened_file": ""
+        },
+        "ui": [
+            {
+                "tab_size": 4,
+                "line_numbers": true,
+                "word_wrap": true
+            }
+        ],
+        "signature": [
+            {
+                "file_path": "",
+                "created_by": "",
+                "created_date": "",
+                "current_date": "",
+                "copyright": "",
+                "disclaimer": ""
+            }
+        ],
+        "runtime": [
+            {
+                "python_version": ""
+            }
+        ]
+    }
+}
