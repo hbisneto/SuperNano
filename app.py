@@ -9,6 +9,7 @@ from textual.containers import Horizontal, Vertical
 from pygments.lexers import guess_lexer
 
 from commands import save
+from services.app_context import AppContext
 
 TEXT = """\
 # SuperNanno 0.1.5
@@ -32,24 +33,23 @@ class SuperNanno(App):
         ("ctrl+f", "search", "Search"),
         ("ctrl+o", "open_path", "Open"),
         ("ctrl+n", "new_file", "New"),
-        ("ctrl+q", "quit", "Quit"),
+        ("ctrl+u", "quit", "Quit"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+r", "read_file", "Read File"),
     ]
 
     def __init__(self):
         super().__init__()
-        self.current_path = None
         self.input_mode = None
-        self.is_dirty = False
         self.temp_file = None
         self._loading = False
         self.confirm_action = None
         self._confirm_quit = False
         self._original_text = ""
         self._status_locked = False
+        self.ctx = AppContext(self)
         if len(sys.argv) > 1:
-            self.current_path = Path(sys.argv[1])
+            self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -83,41 +83,19 @@ class SuperNanno(App):
                 id="sidebar"
             ),
             Vertical(
-                self.path_input,
                 self.editor,
+                self.path_input,
                 self.status,
                 id="main"
             )
         )
         
-        yield self.path_input
         yield Footer()
 
     ###==================== ACTIONS ====================###
     
     def action_save(self):
         save.execute(self.ctx)
-        # if self.current_path:
-        #     try:
-        #         editor = self.query_one("#editor", TextArea)
-        #         self.current_path.write_text(editor.text, encoding="utf-8")
-        #         self.set_status(
-        #             text=f"(Saved): Your file is saved: {self.current_path.name}",
-        #             delay=3,
-        #             next_text=f"{self.current_path.name} | Ready! | UTF-8",
-        #         )
-        #         self.is_dirty = False
-        #         self._confirm_quit = False
-        #         self.refresh_file_list()
-        #     except Exception as e:
-        #         self.set_status(
-        #             text=f"(Error): Could not save file: {e}",
-        #             delay=3,
-        #             next_text=f"SuperNanno | Ready! | UTF-8",
-        #             status_type="error"
-        #         )
-        # else:
-        #     self.prompt_save_as()
 
     def action_search(self):
         input_widget = self.query_one("#path_input", Input)
@@ -138,21 +116,21 @@ class SuperNanno(App):
         )
 
     def action_new_file(self):
-        editor = self.query_one("#editor", TextArea)
+        editor = self.get_editor()
         self._loading = True
         editor.text = ""
         self._original_text = ""
         self._loading = False
-        self.is_dirty = False
+        self.ctx.is_dirty = False
         editor.language = None
-        self.current_path = None
+        self.ctx.current_path = None
         editor.focus()
         self.status.update("New file (unsaved)")
 
     def action_quit(self):
-        if self.is_dirty:
+        if self.ctx.is_dirty:
             if self.confirm_action:
-                self.is_dirty = False
+                self.ctx.is_dirty = False ## Mantive esse
                 action = self.confirm_action
                 self.confirm_action = None
                 action()
@@ -179,7 +157,7 @@ class SuperNanno(App):
     
     def on_input_submitted(self, event: Input.Submitted):
         value = event.value
-        editor = self.query_one("#editor", TextArea)
+        # editor = self.get_editor()
 
         if self.input_mode == "read_file":
             path = Path(event.value).expanduser()
@@ -191,8 +169,8 @@ class SuperNanno(App):
                 return
             try:
                 content = path.read_text(encoding="utf-8", errors="replace")
-                editor = self.query_one("#editor", TextArea)
-                text = editor.text                
+                editor = self.get_editor()
+                text = editor.text         
                 if editor.selection:
                     start, end = editor.selection
                     start_index = editor.document.get_index_from_location(start)
@@ -221,7 +199,7 @@ class SuperNanno(App):
             return
 
         if self.input_mode == "search":
-            editor = self.query_one("#editor", TextArea)
+            editor = self.get_editor()
             index = editor.text.find(value)
             if index != -1:
                 editor.cursor_location = editor.document.get_location_from_index(index)
@@ -232,14 +210,14 @@ class SuperNanno(App):
         elif self.input_mode == "save":
             path = Path(value).expanduser()
             try:
-                editor = self.query_one("#editor", TextArea)
+                editor = self.get_editor()
                 path.write_text(editor.text, encoding="utf-8")
-                self.current_path = path
-                self.is_dirty = False
+                self.ctx.current_path = path
+                self.ctx.is_dirty = False
                 self.set_status(
-                    text=f"(Saved): Your file is saved: {self.current_path.name}",
+                    text=f"(Saved): Your file is saved: {self.ctx.current_path.name}",
                     delay=3,
-                    next_text=f"{self.current_path.name} | Ready! | UTF-8",
+                    next_text=self.get_default_status(),
                 )
                 self.refresh_file_list()
             except Exception as e:
@@ -253,7 +231,7 @@ class SuperNanno(App):
             path = Path(value).expanduser()
             if path.exists():
                 self.load_file(str(path))
-                self.query_one("#editor", TextArea).focus()
+                self.get_editor().focus()
             else:
                 self.status.update("File not found")
 
@@ -265,7 +243,7 @@ class SuperNanno(App):
             input_widget = self.query_one("#path_input", Input)
             if input_widget.display:
                 input_widget.display = False
-                self.query_one("#editor", TextArea).focus()
+                self.get_editor().focus()
 
     def on_list_view_selected(self, event: ListView.Selected):
         self.status.remove_class("success")
@@ -276,11 +254,11 @@ class SuperNanno(App):
         if not hasattr(event.item, "path"):
             return
 
-        if self.is_dirty:
+        if self.ctx.is_dirty:
             if self.confirm_action:
                 action = self.confirm_action
                 self.confirm_action = None
-                self.is_dirty = False
+                self.ctx.is_dirty = False ## Mantive esse aqui também
                 action()
                 return
 
@@ -290,25 +268,25 @@ class SuperNanno(App):
         self.load_file(str(event.item.path))
         
     def on_mount(self):
-        if self.current_path and self.current_path.exists():
-            self.load_file(str(self.current_path.absolute()))
+        if self.ctx.current_path and self.ctx.current_path.exists():
+            self.load_file(str(self.ctx.current_path.absolute()))
         else:
             self.restore_session()
     
     def on_text_area_changed(self, event):
         if self._loading or self._status_locked:
             return
-        editor = self.query_one("#editor", TextArea)
-        self.is_dirty = (editor.text != self._original_text)
-        dirty_flag = "*" if self.is_dirty else ""
-        if self.current_path == None:
+        editor = self.get_editor()
+        self.ctx.is_dirty = (editor.text != self._original_text)
+        dirty_flag = "*" if self.ctx.is_dirty else ""
+        if self.ctx.current_path == None:
             self.status.update(f"SuperNanno | {editor.language} | UTF-8")
         else:    
-            self.status.update(f"{self.current_path}{dirty_flag} | {editor.language} | UTF-8")
+            self.status.update(f"{self.ctx.current_path}{dirty_flag} | {editor.language} | UTF-8")
 
     def on_unmount(self) -> None:
-        if self.current_path and not self.is_dirty:
-            self.save_session_state(self.current_path)
+        if self.ctx.current_path and not self.ctx.is_dirty:
+            self.save_session_state(self.ctx.current_path)
             print()
             print()
 
@@ -325,8 +303,6 @@ class SuperNanno(App):
         self.status.remove_class("warning")
         self.status.remove_class("error")
 
-        # self.status.update(next_text if next_text else "")
-        # self._status_locked = False
         if next_text:
             self.status.update(next_text)
         else:
@@ -334,7 +310,7 @@ class SuperNanno(App):
         self._status_locked = False
 
     def detect_language_from_content(self):
-        editor = self.query_one("#editor", TextArea)
+        editor = self.get_editor()
         try:
             lexer = guess_lexer(editor.text)
             if lexer.aliases:
@@ -346,12 +322,15 @@ class SuperNanno(App):
         editor.refresh()
 
     def get_default_status(self):
-        editor = self.query_one("#editor", TextArea)
-        dirty_flag = "*" if self.is_dirty else ""
+        editor = self.get_editor()
+        dirty_flag = "*" if self.ctx.is_dirty else ""
 
-        if self.current_path:
-            return f"{self.current_path}{dirty_flag} | {editor.language} | UTF-8"
+        if self.ctx.current_path:
+            return f"{self.ctx.current_path}{dirty_flag} | {editor.language} | UTF-8"
         return f"SuperNanno | {editor.language} | UTF-8"
+
+    def get_editor(self):
+        return self.query_one("#editor", TextArea)
 
     def load_file(self, path_str, silent=False):
         try:
@@ -365,13 +344,13 @@ class SuperNanno(App):
                 )
                 return
 
-            editor = self.query_one("#editor", TextArea)
+            editor = self.get_editor()
             self._loading = True
             editor.text = path.read_text(encoding="utf-8")
             self._original_text = editor.text
             self.set_language(path)
-            self.current_path = path
-            self.is_dirty = False
+            self.ctx.current_path = path
+            self.ctx.is_dirty = False
             self._loading = False
             if not silent:
                 self.status.update(f"{path} | {editor.language} | UTF-8")
@@ -434,9 +413,10 @@ class SuperNanno(App):
                     config = json.load(f)
             else:
                 config = {}
-            config["settings"]["session"] = {
-                "last_opened_file": str(file_path)
-            }
+            config.setdefault("settings", {})
+            config["settings"].setdefault("session", {})
+            config["settings"]["session"]["last_opened_file"] = str(file_path)
+
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
         except Exception as e:
@@ -459,7 +439,7 @@ class SuperNanno(App):
             ".cpp": "cpp"
         }
 
-        editor = self.query_one("#editor", TextArea)
+        editor = self.get_editor()
         lang = language_map.get(ext)
         if lang:
             editor.language = lang
@@ -495,7 +475,6 @@ class SuperNanno(App):
         if delay and next_text:
             self._status_task = self.run_worker(
                 self.__unlock_status_after__(delay, next_text)
-                # self.__reset_status__(delay, next_text)
             )
 
 if __name__ == "__main__":
