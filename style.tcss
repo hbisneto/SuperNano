@@ -14,12 +14,14 @@ Horizontal {}
 Vertical {}
 
 #sidebar {
-    width: 50;
+    width: 30;
     background: $surface;
     border-right: tall $primary;
 }
 
 #main {
+    layout: vertical;
+    height: 100%;
     width: 1fr;
     background: $background;
 }
@@ -31,7 +33,11 @@ Vertical {}
     text-align: center;
 }
 
-#files {}
+#files {
+    padding-top: 1;
+    padding-left: 1;
+    padding-right: 1;
+}
 ListView {}
 
 ListItem {
@@ -48,14 +54,22 @@ ListItem:focus {
     color: $background;
 }
 
-#editor {}
+#editor {
+    height: 1fr;
+    width: 100%;
+    margin-left: -1;
+    margin-right: 0;
+}
 
 TextArea {
     background: $background;
     color: #d1d5db;
+    scrollbar-gutter: stable;
 }
 
-#path_input {}
+#path_input {
+    height: auto;
+}
 
 Input {
     background: $background;
@@ -70,6 +84,9 @@ Input:focus {
 #status {
     background: $accent;
     color: $background;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 1;
 }
 
 #status.success {
