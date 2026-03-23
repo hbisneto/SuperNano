@@ -1,3 +1,5 @@
+from commands import save_as
+
 def execute(ctx):
     if ctx.current_path:
         try:
@@ -19,3 +21,5 @@ def execute(ctx):
                 delay=3,
                 status_type="error"
             )
+    else:
+        save_as.execute(ctx)

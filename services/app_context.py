@@ -10,7 +10,6 @@ class AppContext:
 
         self.editor_state = EditorState()
         self.file_manager = FileManager()
-        # self.status = StatusService(app)
         self.status = StatusService(app, debug=True)
     
     def mark_saved(self):
