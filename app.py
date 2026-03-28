@@ -99,7 +99,10 @@ class SuperNanno(App):
             self.sidebar,
             Vertical(
                 self.editor,
-                self.search_bar,
+                Vertical(
+                    self.search_bar,
+                    id="search_container"
+                ),
                 self.path_input,
                 self.status,
                 id="main"
