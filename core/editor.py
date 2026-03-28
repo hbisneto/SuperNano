@@ -1,3 +1,5 @@
+# core/editor.py
+
 class EditorState:
     def __init__(self):
         self.original_text = ""

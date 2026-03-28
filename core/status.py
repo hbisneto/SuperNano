@@ -1,6 +1,6 @@
+# core/status.py
+
 from datetime import datetime
-
-
 class StatusService:
     def __init__(self, app, debug=False):
         self.app = app

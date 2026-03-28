@@ -1,3 +1,5 @@
+# commands/new_file.py
+
 def execute(ctx):
     editor = ctx.editor
 

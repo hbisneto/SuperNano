@@ -1,3 +1,5 @@
+# commands/open_file.py
+
 from textual.widgets import Input
 
 def execute(ctx):

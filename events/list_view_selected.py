@@ -1,3 +1,5 @@
+# events/list_view_selected.py
+
 def handle(ctx, event):
     app = ctx.app
 

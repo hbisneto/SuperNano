@@ -1,10 +1,6 @@
-from textual.widgets import Input
+# commands/search.py
+
+from states.search import SearchState
 
 def execute(ctx):
-    input_widget = ctx.app.query_one("#path_input", Input)
-
-    input_widget.display = True
-    input_widget.placeholder = "Search..."
-    input_widget.focus()
-
-    ctx.app.input_mode = "search"
+    ctx.app.set_state(SearchState())

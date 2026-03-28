@@ -1,3 +1,5 @@
+# services/app_context.py
+
 from pathlib import Path
 from core.editor import EditorState
 from core.file_manager import FileManager
@@ -7,6 +9,7 @@ class AppContext:
         self.app = app
         self.current_path: Path | None = None
         self.is_dirty = False
+        self.state = None
 
         self.editor_state = EditorState()
         self.file_manager = FileManager()

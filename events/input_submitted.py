@@ -1,7 +1,13 @@
+# events/input_submitted.py
+
 from pathlib import Path
 
-
 def handle(ctx, event):
+    if ctx.state:
+        ctx.state.handle_input(ctx, event)
+        # _finalize(ctx, event)
+        return
+    
     value = event.value
     mode = ctx.app.input_mode
 
@@ -10,10 +16,7 @@ def handle(ctx, event):
 
     _finalize(ctx, event)
 
-
-# =========================
-# HANDLERS
-# =========================
+# ========================= HANDLERS =========================
 
 def _handle_read_file(ctx, event, value):
     path = Path(value).expanduser()
@@ -95,7 +98,6 @@ def _handle_save(ctx, event, value):
             status_type="error"
         )
 
-
 def _handle_open(ctx, event, value):
     path = Path(value).expanduser()
 
@@ -111,10 +113,7 @@ HANDLERS = {
     "save": _handle_save,
 }
 
-
-# =========================
-# FINALIZATION
-# =========================
+# ========================= FINALIZATION =========================
 
 def _finalize(ctx, event):
     ctx.app.input_mode = None

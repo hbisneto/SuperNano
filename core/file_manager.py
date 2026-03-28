@@ -1,3 +1,5 @@
+# core/file_manager.py
+ 
 from pathlib import Path
 
 class FileManager:

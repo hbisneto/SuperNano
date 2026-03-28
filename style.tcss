@@ -57,7 +57,6 @@ ListItem:focus {
 #editor {
     height: 1fr;
     width: 100%;
-    margin-left: -1;
     margin-right: 0;
 }
 
@@ -69,6 +68,28 @@ TextArea {
 
 #path_input {
     height: auto;
+}
+
+SearchBar {
+    dock: bottom;
+    height: 3;
+    width: 100%;
+    background: #262626;
+    border-top: tall $muted;
+    padding: 0 1;
+    display: none;
+}
+
+SearchBar.--visible {
+    display: block;
+}
+
+#search_input {
+    width: 1fr;
+}
+
+#replace_input {
+    width: 1fr;
 }
 
 Input {
@@ -84,7 +105,7 @@ Input:focus {
 #status {
     background: $accent;
     color: $background;
-    width: 100%;
+    width: 1fr;
     margin-left: 0;
     margin-right: 1;
 }

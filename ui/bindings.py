@@ -1,3 +1,5 @@
+# ui/bindings.py
+
 BINDINGS = [
         ("ctrl+b", "show_hide_sidebar", "Show/Hide Sidebar"),
         ("ctrl+n", "new_file", "New"),
@@ -8,7 +10,7 @@ BINDINGS = [
         ("ctrl+q", "quit", "Quit"),
     ]
 
-TEXT = """\
+WELCOME = """\
 # SuperNanno 0.2.0
 
 Welcome! This editor works like a simple system text editor.

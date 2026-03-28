@@ -1,3 +1,5 @@
+# app.py
+
 import asyncio
 import json
 import sys
@@ -27,6 +29,8 @@ from commands import (
 )
 
 from events import (
+    button_pressed,
+    input_changed,
     input_submitted,
     key,
     list_view_selected,
@@ -36,7 +40,8 @@ from events import (
 )
 
 from services.app_context import AppContext
-from ui.bindings import BINDINGS, TEXT
+from ui.bindings import BINDINGS, WELCOME
+from ui.search_bar import SearchBar
 
 class SuperNanno(App):
     CSS_PATH = "style.tcss"
@@ -65,29 +70,36 @@ class SuperNanno(App):
                 files.append(item)
 
         self.file_list = ListView(*files, id="files")
+        
         self.path_input = Input(
             placeholder="Enter file path: ~/Documents/file.txt",
             id="path_input"
         )
+        self.path_input.display = False
+
         self.editor = TextArea.code_editor(
             "",
             id="editor",
             language="markdown"
         )
-        self.editor.text = TEXT
 
+        self.editor.text = WELCOME
         self.status = Static("SuperNanno Ready", id="status")
-        self.path_input.display = False
+
+        self.search_bar = SearchBar()
+        # self.search_bar.display = False
 
         self.sidebar = Vertical(
             Static("FILES", classes="title"),
             self.file_list,
             id="sidebar"
         )
+
         yield Horizontal(
             self.sidebar,
             Vertical(
                 self.editor,
+                self.search_bar,
                 self.path_input,
                 self.status,
                 id="main"
@@ -123,6 +135,12 @@ class SuperNanno(App):
 
     ###==================== ON EVENT ====================###
     
+    def on_button_pressed(self, event):
+        button_pressed.handle(self.ctx, event)
+
+    def on_input_changed(self, event):
+        input_changed.handle(self.ctx, event)
+
     def on_input_submitted(self, event: Input.Submitted):
         input_submitted.handle(self.ctx, event)
 
@@ -309,6 +327,15 @@ class SuperNanno(App):
             except Exception:
                 editor.language = None
         editor.refresh()
+
+    def set_state(self, state):
+        if self.ctx.state:
+            self.ctx.state.on_exit(self.ctx)
+
+        self.ctx.state = state
+
+        if state:
+            state.on_enter(self.ctx)
 
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
         self._status_locked = True
