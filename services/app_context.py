@@ -4,6 +4,7 @@ from pathlib import Path
 from core.editor import EditorState
 from core.file_manager import FileManager
 from core.status import StatusService
+from services.config_manager import ConfigManager
 class AppContext:
     def __init__(self, app):
         self.app = app
@@ -14,6 +15,7 @@ class AppContext:
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)
+        self.config = ConfigManager()
     
     def mark_saved(self):
         self.is_dirty = False

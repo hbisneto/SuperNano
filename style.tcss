@@ -13,17 +13,50 @@ Screen {
 Horizontal {}
 Vertical {}
 
-#sidebar {
-    width: 30;
-    background: $surface;
-    border-right: tall $primary;
-}
-
 #main {
     layout: vertical;
     height: 100%;
     width: 1fr;
     background: $background;
+}
+
+#sidebar {
+    width: 35;
+    background: $surface;
+    border-right: tall $primary;
+}
+
+DirectoryTree {
+    background: $surface;
+    color: $text;
+    scrollbar-gutter: stable;
+}
+
+DirectoryTree .folder {
+    color: #22c55e;
+    text-style: bold;
+}
+
+DirectoryTree .file {
+    color: #60a5fa;
+}
+
+DirectoryTree .hidden {
+    color: $muted;
+    text-style: italic;
+}
+
+#input_area {
+    height: auto;
+    width: 100%;
+    background: #262626;
+    border-top: tall $muted;
+    padding: 0 1;
+}
+
+#input_area SearchBar,
+#input_area Input {
+    width: 100%;
 }
 
 .title {

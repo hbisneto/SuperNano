@@ -99,13 +99,24 @@ def _handle_save(ctx, event, value):
         )
 
 def _handle_open(ctx, event, value):
-    path = Path(value).expanduser()
+    path = Path(value).expanduser().resolve()
 
-    if path.exists():
-        ctx.app.load_file(str(path))
-        ctx.editor.focus()
+    if not path.exists():
+        ctx.status.set(f"Path not found: {path}", delay=3, status_type="error")
+        return
+
+    app = ctx.app
+
+    if path.is_file():
+        app.load_file(str(path))
+        app.editor.focus()
+    elif path.is_dir():
+        # Carrega a pasta no DirectoryTree
+        app.directory_tree.path = str(path)
+        app.directory_tree.reload()
+        ctx.status.set(f"Loaded folder: {path.name}", delay=2, status_type="info")
     else:
-        ctx.app.status.update("File not found")
+        ctx.status.set("Not a file or folder", delay=3, status_type="warning")
 
 HANDLERS = {
     "read_file": _handle_read_file,

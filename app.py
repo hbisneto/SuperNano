@@ -9,6 +9,7 @@ from pygments.lexers import guess_lexer
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import (
+    DirectoryTree,
     Static, 
     TextArea, 
     ListView, 
@@ -30,6 +31,7 @@ from commands import (
 
 from events import (
     button_pressed,
+    directory_tree_selected,
     input_changed,
     input_submitted,
     key,
@@ -61,37 +63,39 @@ class SuperNanno(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        files = []
 
-        for f in Path(".").iterdir():
-            if f.is_file():
-                item = ListItem(Static(f.name))
-                item.path = f
-                files.append(item)
+        # === NOVO: DirectoryTree no lugar do ListView antigo ===
+        self.directory_tree = DirectoryTree(
+            path=".", 
+            id="sidebar"
+        )
 
-        self.file_list = ListView(*files, id="files")
-        
         self.path_input = Input(
-            placeholder="Enter file path: ~/Documents/file.txt",
+            placeholder="Enter file path or folder: ~/Documents/file.txt",
             id="path_input"
         )
         self.path_input.display = False
 
         self.editor = TextArea.code_editor(
-            "",
-            id="editor",
-            language="markdown"
+            "", id="editor", language="markdown"
         )
-
         self.editor.text = WELCOME
+
         self.status = Static("SuperNanno Ready", id="status")
 
         self.search_bar = SearchBar()
-        # self.search_bar.display = False
+
+        # Container único para todos os inputs transitórios (padronizado)
+        self.input_area = Vertical(
+            self.search_bar,
+            self.path_input,
+            id="input_area"
+        )
+        self.input_area.display = False   # começa escondido
 
         self.sidebar = Vertical(
-            Static("FILES", classes="title"),
-            self.file_list,
+            Static("EXPLORER", classes="title"),
+            self.directory_tree,
             id="sidebar"
         )
 
@@ -99,11 +103,7 @@ class SuperNanno(App):
             self.sidebar,
             Vertical(
                 self.editor,
-                Vertical(
-                    self.search_bar,
-                    id="search_container"
-                ),
-                self.path_input,
+                self.input_area,      # ← todos os inputs ficam aqui
                 self.status,
                 id="main"
             )
@@ -141,6 +141,9 @@ class SuperNanno(App):
     def on_button_pressed(self, event):
         button_pressed.handle(self.ctx, event)
 
+    def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected):
+        directory_tree_selected.handle(self.ctx, event)
+
     def on_input_changed(self, event):
         input_changed.handle(self.ctx, event)
 
@@ -170,6 +173,7 @@ class SuperNanno(App):
 
     async def __unlock_status_after__(self, delay, next_text):
         await asyncio.sleep(delay)
+        
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
@@ -179,6 +183,7 @@ class SuperNanno(App):
             self.status.update(next_text)
         else:
             self.status.update(self.get_default_status())
+        
         self._status_locked = False
 
     def detect_language_from_content(self):
@@ -255,53 +260,33 @@ class SuperNanno(App):
                 self.file_list.append(item)
 
     def restore_session(self):
-        config_path = Path("config.json")
-        if not config_path.exists():
+        """Restaura o último arquivo aberto usando o ConfigManager"""
+        if not self.ctx.config.get("settings.startup.restore_last_session", True):
             return
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                config = json.load(f)
-            last_file = config.get("settings", {}).get("session", {}).get("last_opened_file", {})
-            if last_file:
-                path = Path(last_file).expanduser()
-                if path.exists() and path.is_file():
-                    self._loading = True
-                    self.load_file(str(path), silent=True)
-                    self._loading = False
-                    self.ctx.status.set(
-                        f"(Session Restored): {path.name}",
-                        delay=3,
-                        next_text=self.get_default_status(),
-                        status_type="info"
-                    )
-        except Exception as e:
+
+        last_file = self.ctx.config.get("settings.session.last_opened_file", "")
+        if not last_file:
+            return
+
+        path = Path(last_file).expanduser()
+        if path.exists() and path.is_file():
+            self._loading = True
+            self.load_file(str(path), silent=True)
+            self._loading = False
             self.ctx.status.set(
-                f"(Session Error): {e}",
+                f"(Session Restored): {path.name}",
                 delay=3,
                 next_text=self.get_default_status(),
-                status_type="error"
+                status_type="info"
             )
 
-    def save_session_state(self, file_path):
+    def save_session_state(self, file_path: Path | None):
+        """Salva o último arquivo aberto"""
         if not file_path:
             return
-        config_path = Path("config.json")
-        try:
-            if config_path.exists():
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-            else:
-                config = {}
-            config.setdefault("settings", {})
-            config["settings"].setdefault("session", {})
-            config["settings"]["session"]["last_opened_file"] = str(file_path)
-
-            with open(config_path, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=4, ensure_ascii=False)
-        except Exception as e:
+        self.ctx.config.set("settings.session.last_opened_file", str(file_path))
             # Security: Recreate config.json with default values
             # self.set_status(f"(Save Session Error): {e}", delay=3, status_type="error")
-            self.ctx.status.set(f'(Save Session Error): {e}', delay=3, status_type="error")
 
     def set_language(self, path: Path):
         ext = path.suffix.lower()
@@ -341,12 +326,16 @@ class SuperNanno(App):
             state.on_enter(self.ctx)
 
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
+        """Atualiza o status bar de forma segura."""
         self._status_locked = True
+
+        # Remove todas as classes de cor
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
 
+        # Aplica a cor correta
         if status_type == "success":
             self.status.add_class("success")
         elif status_type == "info":
@@ -357,13 +346,17 @@ class SuperNanno(App):
             self.status.add_class("error")
 
         self.status.update(text)
-        
+
+        # Cancela tarefa anterior se existir
         if hasattr(self, "_status_task") and self._status_task:
             self._status_task.cancel()
 
-        if delay and next_text:
+        # Se tiver delay, agenda a restauração do status
+        if delay is not None:
+            next_text = next_text or self.get_default_status()
             self._status_task = self.run_worker(
-                self.__unlock_status_after__(delay, next_text)
+                self.__unlock_status_after__(delay, next_text),
+                name="status_unlock"
             )
 
 if __name__ == "__main__":
