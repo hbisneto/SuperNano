@@ -4,6 +4,7 @@ $background: #1F1F1F;
 $surface: #1F1F1F;
 $text: #ffffff;
 $muted: #94a3b8;
+$editor-bg: #2C5899;
 
 Screen {
     background: $background;
@@ -22,14 +23,17 @@ Vertical {}
 
 #sidebar {
     width: 35;
-    background: $surface;
-    border-right: tall $primary;
+    background: #212529;
+    border: none;
 }
 
 DirectoryTree {
     background: $surface;
     color: $text;
     scrollbar-gutter: stable;
+    border: none;
+    padding-top: 0;
+    padding-left: 0;
 }
 
 DirectoryTree .folder {
@@ -44,14 +48,6 @@ DirectoryTree .file {
 DirectoryTree .hidden {
     color: $muted;
     text-style: italic;
-}
-
-#input_area {
-    height: auto;
-    width: 100%;
-    background: #262626;
-    border-top: tall $muted;
-    padding: 0 1;
 }
 
 #input_area SearchBar,
@@ -87,24 +83,21 @@ ListItem:focus {
     color: $background;
 }
 
-#editor {
+#editor{
     height: 1fr;
     width: 100%;
     margin-right: 0;
+    border: none;
+    padding: 1;
 }
 
+#input_area,
 #search_container {
     height: auto;
     width: 100%;
     background: #262626;
     border-top: tall $muted;
     padding: 0 1;
-}
-
-TextArea {
-    background: $background;
-    color: #d1d5db;
-    scrollbar-gutter: stable;
 }
 
 #path_input {
@@ -143,9 +136,9 @@ Input:focus {
     height: 1;
     background: $accent;
     color: $background;
-    width: 1fr;
-    margin-left: 1;
-    margin-right: 1;
+    width: 100%;
+    margin: 0;
+    padding-left: 1;
 }
 
 #status.success {
@@ -173,4 +166,10 @@ Header {
 Footer {
     background: #454990;
     color: $muted;
+}
+
+TextArea {
+    background: $background;
+    color: #d1d5db;
+    scrollbar-gutter: stable;
 }

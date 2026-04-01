@@ -42,6 +42,7 @@ from events import (
 )
 
 from services.app_context import AppContext
+from themes import THEMES
 from ui.bindings import BINDINGS, WELCOME
 from ui.search_bar import SearchBar
 
@@ -61,7 +62,7 @@ class SuperNanno(App):
         if len(sys.argv) > 1:
             self.ctx.current_path = Path(sys.argv[1])
 
-    def compose(self) -> ComposeResult:
+    def compose(self) -> ComposeResult:        
         yield Header()
 
         # === NOVO: DirectoryTree no lugar do ListView antigo ===
@@ -77,12 +78,21 @@ class SuperNanno(App):
         self.path_input.display = False
 
         self.editor = TextArea.code_editor(
-            "", id="editor", language="markdown"
+            "",
+            id="editor", 
+            language="markdown",
+            classes="editor-pane"
         )
+
+        # LOAD DEFAULT THEME
+        theme_name = self.ctx.config.get("settings.ui.theme", "neo_nano")
+        theme = THEMES.get(theme_name)
+        if theme:
+            self.editor.register_theme(theme)
+            self.editor.theme = theme.name
+        
         self.editor.text = WELCOME
-
         self.status = Static("SuperNanno Ready", id="status")
-
         self.search_bar = SearchBar()
 
         # Container único para todos os inputs transitórios (padronizado)
@@ -91,7 +101,7 @@ class SuperNanno(App):
             self.path_input,
             id="input_area"
         )
-        self.input_area.display = False   # começa escondido
+        self.input_area.display = False
 
         self.sidebar = Vertical(
             Static("EXPLORER", classes="title"),
@@ -103,7 +113,7 @@ class SuperNanno(App):
             self.sidebar,
             Vertical(
                 self.editor,
-                self.input_area,      # ← todos os inputs ficam aqui
+                self.input_area,
                 self.status,
                 id="main"
             )
@@ -157,6 +167,11 @@ class SuperNanno(App):
         list_view_selected.handle(self.ctx, event)
         
     def on_mount(self):
+        self.editor = self.get_editor()
+        if hasattr(self.editor, '_highlighter') and hasattr(self.editor._highlighter, 'highlights'):
+            print("Captures disponíveis na linha 0:")
+            for h in self.editor._highlights.get(0, []):
+                print(f"  {h.name} → {h.style}")
         mount.handle(self.ctx)
     
     def on_text_area_changed(self, event):
