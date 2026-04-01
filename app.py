@@ -1,7 +1,7 @@
 # app.py
 
+from __future__ import annotations
 import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -10,12 +10,10 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import (
     DirectoryTree,
-    Static, 
-    TextArea, 
-    ListView, 
-    ListItem, 
-    Header, 
-    Footer, 
+    Static,
+    TextArea,
+    ListView,
+    ListItem,
     Input
 )
 
@@ -43,7 +41,8 @@ from events import (
 
 from services.app_context import AppContext
 from ui.bindings import BINDINGS, WELCOME
-from ui.search_bar import SearchBar
+from ui.settings.screen import SettingsScreen
+from ui.layout import create_layout
 
 class SuperNanno(App):
     CSS_PATH = "style.tcss"
@@ -62,54 +61,27 @@ class SuperNanno(App):
             self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        # Centraliza a criação do layout
+        (header, 
+         self.sidebar, 
+         main_content, 
+         footer, 
+         self.directory_tree, 
+         self.search_bar, 
+         self.path_input, 
+         self.editor, 
+         self.status) = create_layout()
 
-        # === NOVO: DirectoryTree no lugar do ListView antigo ===
-        self.directory_tree = DirectoryTree(
-            path=".", 
-            id="sidebar"
-        )
-
-        self.path_input = Input(
-            placeholder="Enter file path or folder: ~/Documents/file.txt",
-            id="path_input"
-        )
-        self.path_input.display = False
-
-        self.editor = TextArea.code_editor(
-            "", id="editor", language="markdown"
-        )
+        # Define o texto inicial do editor
         self.editor.text = WELCOME
 
-        self.status = Static("SuperNanno Ready", id="status")
-
-        self.search_bar = SearchBar()
-
-        # Container único para todos os inputs transitórios (padronizado)
-        self.input_area = Vertical(
-            self.search_bar,
-            self.path_input,
-            id="input_area"
-        )
-        self.input_area.display = False   # começa escondido
-
-        self.sidebar = Vertical(
-            Static("EXPLORER", classes="title"),
-            self.directory_tree,
-            id="sidebar"
-        )
-
+        # Monta a tela principal
+        yield header
         yield Horizontal(
             self.sidebar,
-            Vertical(
-                self.editor,
-                self.input_area,      # ← todos os inputs ficam aqui
-                self.status,
-                id="main"
-            )
+            main_content
         )
-        
-        yield Footer()
+        yield footer
 
     ###==================== ACTIONS ====================###
 
@@ -133,6 +105,9 @@ class SuperNanno(App):
 
     def action_show_hide_sidebar(self):
         toggle_sidebar.execute(self.ctx)
+
+    def action_show_settings(self):
+        self.push_screen(SettingsScreen())
 
     ###==================== ACTIONS ====================###
 
