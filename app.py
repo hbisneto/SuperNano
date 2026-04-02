@@ -1,227 +1,144 @@
+# app.py
+
+from __future__ import annotations
 import asyncio
 import sys
-from datetime import datetime
 from pathlib import Path
-from textual.app import App, ComposeResult
-from textual.widgets import Static, TextArea, ListView, ListItem, Header, Footer, Input
-from textual.containers import Horizontal, Vertical
+
 from pygments.lexers import guess_lexer
+from textual.app import App, ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.widgets import (
+    DirectoryTree,
+    Static,
+    TextArea,
+    ListView,
+    ListItem,
+    Input
+)
 
-TEXT = """\
-# SuperNanno 0.1.5
+from commands import (
+    new_file,
+    open_file,
+    quit,
+    read_file,
+    save_file,
+    search,
+    toggle_sidebar
+)
 
-Welcome! This editor works like a simple system text editor.
+from events import (
+    button_pressed,
+    directory_tree_selected,
+    input_changed,
+    input_submitted,
+    key,
+    list_view_selected,
+    mount,
+    text_area_changed,
+    unmount
+)
 
-Keyboard shortcuts:
-
-CTRL + F  → Search text
-CTRL + O  → Open file
-CTRL + N  → New file
-CTRL + Q  → Quit editor
-CTRL + S  → Save file
-
-Start typing to edit the document.
-"""
+from services.app_context import AppContext
+from ui.bindings import BINDINGS, WELCOME
+from ui.settings.screen import SettingsScreen
+from ui.layout import create_layout
 
 class SuperNanno(App):
     CSS_PATH = "style.tcss"
-    BINDINGS = [
-        ("ctrl+f", "search", "Search"),
-        ("ctrl+o", "open_path", "Open"),
-        ("ctrl+n", "new_file", "New"),
-        ("ctrl+q", "quit", "Quit"), 
-        ("ctrl+s", "save", "Save"),
-    ]
+    BINDINGS = BINDINGS
 
     def __init__(self):
         super().__init__()
-        self.current_path = None
         self.input_mode = None
-        self.is_dirty = False
         self.temp_file = None
         self._loading = False
         self.confirm_action = None
         self._confirm_quit = False
-        self._original_text = ""
+        self._status_locked = False
+        self.ctx = AppContext(self)
         if len(sys.argv) > 1:
-            self.current_path = Path(sys.argv[1])
+            self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        files = []
+        # Centraliza a criação do layout
+        (header, 
+         self.sidebar, 
+         main_content, 
+         footer, 
+         self.directory_tree, 
+         self.search_bar, 
+         self.path_input, 
+         self.editor, 
+         self.status) = create_layout()
 
-        for f in Path(".").iterdir():
-            if f.is_file():
-                item = ListItem(Static(f.name))
-                item.path = f
-                files.append(item)
+        # Define o texto inicial do editor
+        self.editor.text = WELCOME
 
-        self.file_list = ListView(*files, id="files")
-        self.path_input = Input(
-            placeholder="Enter file path: ~/Documents/file.txt",
-            id="path_input"
-        )
-        self.editor = TextArea.code_editor(
-            "",
-            id="editor",
-            language="markdown"
-        )
-        self.editor.text = TEXT
-
-        self.status = Static("SuperNanno Ready", id="status")
-        self.path_input.display = False
-
+        # Monta a tela principal
+        yield header
         yield Horizontal(
-            Vertical(
-                Static("FILES", classes="title"),
-                self.file_list,
-                id="sidebar"
-            ),
-            Vertical(
-                self.path_input,
-                self.editor,
-                self.status,
-                id="main"
-            )
+            self.sidebar,
+            main_content
         )
-        
-        yield self.path_input
-        yield Footer()
+        yield footer
 
     ###==================== ACTIONS ====================###
-    
-    def action_save(self):
-        if self.current_path:
-            try:
-                editor = self.query_one("#editor", TextArea)
-                self.current_path.write_text(editor.text, encoding="utf-8")
-                self.status.update(f"SAVED: {self.current_path.name}")
-                self.is_dirty = False
-                self._confirm_quit = False
-                self.refresh_file_list()
-            except Exception as e:
-                self.status.update(f"Error when saving: {e}")
-        else:
-            self.prompt_save_as()
-
-    def action_search(self):
-        input_widget = self.query_one("#path_input", Input)
-        input_widget.display = True
-        input_widget.placeholder = "Search..."
-        input_widget.focus()
-        self.input_mode = "search"
-
-    def action_open_path(self):
-        input_widget = self.query_one("#path_input", Input)
-        input_widget.display = True
-        input_widget.value = ""
-        input_widget.focus()
-        self.input_mode = "open"
-        self.status.update("Enter file path and press Enter")
 
     def action_new_file(self):
-        editor = self.query_one("#editor", TextArea)
-        self._loading = True
-        editor.text = ""
-        self._original_text = ""
-        self._loading = False
-        self.is_dirty = False
-        editor.language = None
-        self.current_path = None
-        editor.focus()
-        self.status.update("New file (unsaved)")
+        new_file.execute(self.ctx)
+        
+    def action_open_path(self):
+        open_file.execute(self.ctx)
 
     def action_quit(self):
-        if self.is_dirty:
-            if self.confirm_action:
-                self.is_dirty = False
-                action = self.confirm_action
-                self.confirm_action = None
-                action()
-                self.status.update("Changes discarded")
-            elif getattr(self, "_confirm_quit", False):
-                self.exit()
-            else:
-                self._confirm_quit = True
-                self.status.update("Unsaved changes! Press CTRL+Q again to exit.")
-        else:
-            self.exit()
+        quit.execute(self.ctx)
+
+    def action_read_file(self):
+        read_file.execute(self.ctx)
+
+    def action_save(self):
+        save_file.execute(self.ctx)
+
+    def action_search(self):
+        search.execute(self.ctx)
+
+    def action_show_hide_sidebar(self):
+        toggle_sidebar.execute(self.ctx)
+
+    def action_show_settings(self):
+        self.push_screen(SettingsScreen())
 
     ###==================== ACTIONS ====================###
 
     ###==================== ON EVENT ====================###
     
+    def on_button_pressed(self, event):
+        button_pressed.handle(self.ctx, event)
+
+    def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected):
+        directory_tree_selected.handle(self.ctx, event)
+
+    def on_input_changed(self, event):
+        input_changed.handle(self.ctx, event)
+
     def on_input_submitted(self, event: Input.Submitted):
-        value = event.value
-
-        if self.input_mode == "search":
-            editor = self.query_one("#editor", TextArea)
-            index = editor.text.find(value)
-            if index != -1:
-                editor.cursor_location = editor.document.get_location_from_index(index)
-                self.status.update(f"Found: {value}")
-            else:
-                self.status.update("Not found")
-
-        elif self.input_mode == "save":
-            path = Path(value).expanduser()
-            try:
-                editor = self.query_one("#editor", TextArea)
-                path.write_text(editor.text, encoding="utf-8")
-                self.current_path = path
-                self.is_dirty = False
-                self.status.update(f"SAVED: {path}")
-                self.refresh_file_list()
-            except Exception as e:
-                self.status.update(f"Error saving: {e}")
-
-        else:  # open
-            path = Path(value).expanduser()
-            if path.exists():
-                self.load_file(str(path))
-                self.query_one("#editor", TextArea).focus()
-            else:
-                self.status.update("File not found")
-
-        self.input_mode = None
-        event.input.display = False
+        input_submitted.handle(self.ctx, event)
 
     def on_key(self, event):
-        if event.key == "escape":
-            input_widget = self.query_one("#path_input", Input)
-            if input_widget.display:
-                input_widget.display = False
-                self.query_one("#editor", TextArea).focus()
+        key.handle(self.ctx, event)
 
     def on_list_view_selected(self, event: ListView.Selected):
-        if not hasattr(event.item, "path"):
-            return
-
-        if self.is_dirty:
-            if self.confirm_action:
-                action = self.confirm_action
-                self.confirm_action = None
-                self.is_dirty = False
-                action()
-                return
-
-            self.confirm_action = lambda: self.load_file(str(event.item.path))
-            self.status.update("Click again to discard changes")
-            return
-        self.load_file(str(event.item.path))
+        list_view_selected.handle(self.ctx, event)
         
     def on_mount(self):
-        if self.current_path and self.current_path.exists():
-            self.load_file(str(self.current_path.absolute()))
+        mount.handle(self.ctx)
     
     def on_text_area_changed(self, event):
-        editor = self.query_one("#editor", TextArea)
-        self.is_dirty = (editor.text != self._original_text)
-        dirty_flag = "*" if self.is_dirty else ""
-        if self.current_path == None:
-            self.status.update(f"SuperNanno | {editor.language} | UTF-8")
-        else:    
-            self.status.update(f"{self.current_path}{dirty_flag} | {editor.language} | UTF-8")
+        text_area_changed.handle(self.ctx)
+
+    def on_unmount(self) -> None:
+        unmount.handle(self.ctx)
 
     ###==================== ON EVENT ====================###
 
@@ -229,16 +146,23 @@ class SuperNanno(App):
         await asyncio.sleep(delay)
         self.status.update(text)
 
-    async def __reset_status__(self, delay, text):
+    async def __unlock_status_after__(self, delay, next_text):
         await asyncio.sleep(delay)
-
+        
         self.status.remove_class("success")
+        self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
-        self.status.update(text)
+
+        if next_text:
+            self.status.update(next_text)
+        else:
+            self.status.update(self.get_default_status())
+        
+        self._status_locked = False
 
     def detect_language_from_content(self):
-        editor = self.query_one("#editor", TextArea)
+        editor = self.get_editor()
         try:
             lexer = guess_lexer(editor.text)
             if lexer.aliases:
@@ -249,43 +173,56 @@ class SuperNanno(App):
             editor.language = None
         editor.refresh()
 
-    def load_file(self, path_str):
+    def get_default_status(self):
+        editor = self.get_editor()
+        dirty_flag = "*" if self.ctx.is_dirty else ""
+
+        if self.ctx.current_path:
+            return f"{self.ctx.current_path}{dirty_flag} | {editor.language} | UTF-8"
+        return f"SuperNanno | {editor.language} | UTF-8"
+
+    def get_editor(self):
+        return self.query_one("#editor", TextArea)
+
+    def load_file(self, path_str, silent=False):
         try:
             path = Path(path_str)
+
             if path.is_dir():
-                self.set_status(
-                    text="(!): Cannot open a directory. Select a file instead",
+                self.ctx.status.set(
+                    "(File Operation): Cannot open a directory\n >> Choose a file to open it",
                     delay=3,
-                    next_text=f"SuperNanno | UTF-8",
+                    next_text=self.get_default_status(),
                     status_type="warning"
                 )
                 return
 
-            editor = self.query_one("#editor", TextArea)
+            content = self.ctx.file_manager.read(path)
+            editor = self.get_editor()
             self._loading = True
-            editor.text = path.read_text(encoding="utf-8")
-            self._original_text = editor.text
-            self.set_language(path)
-            self.current_path = path
-            self.is_dirty = False
+            editor.text = content
             self._loading = False
-            self.status.update(f"{path} | {editor.language} | UTF-8")
+            self.ctx.editor_state.mark_saved(content)
+            self.ctx.current_path = path
+            self.ctx.is_dirty = False
+            self.set_language(path)
+
+            if not silent:
+                self.ctx.status.set(f"{path} loaded", delay=1, next_text=self.get_default_status())
 
         except Exception as e:
-            self.set_status(
-                text=f"(Error): Could not open file: {e}",
-                delay=3,
-                next_text=f"SuperNanno | Ready! | UTF-8",
+            self.ctx.status.set(
+                f"(Error): {e}",
+                delay=5,
                 status_type="error"
             )
-    
+
     def prompt_save_as(self):
         input_widget = self.query_one("#path_input", Input)
         input_widget.display = True
         input_widget.placeholder = "Save as: ./file.txt"
         input_widget.value = "./"
         input_widget.focus()
-
         self.input_mode = "save"
         self.status.update("Enter path to save file")
 
@@ -296,6 +233,35 @@ class SuperNanno(App):
                 item = ListItem(Static(f.name))
                 item.path = f
                 self.file_list.append(item)
+
+    def restore_session(self):
+        """Restaura o último arquivo aberto usando o ConfigManager"""
+        if not self.ctx.config.get("settings.startup.restore_last_session", True):
+            return
+
+        last_file = self.ctx.config.get("settings.session.last_opened_file", "")
+        if not last_file:
+            return
+
+        path = Path(last_file).expanduser()
+        if path.exists() and path.is_file():
+            self._loading = True
+            self.load_file(str(path), silent=True)
+            self._loading = False
+            self.ctx.status.set(
+                f"(Session Restored): {path.name}",
+                delay=3,
+                next_text=self.get_default_status(),
+                status_type="info"
+            )
+
+    def save_session_state(self, file_path: Path | None):
+        """Salva o último arquivo aberto"""
+        if not file_path:
+            return
+        self.ctx.config.set("settings.session.last_opened_file", str(file_path))
+            # Security: Recreate config.json with default values
+            # self.set_status(f"(Save Session Error): {e}", delay=3, status_type="error")
 
     def set_language(self, path: Path):
         ext = path.suffix.lower()
@@ -313,7 +279,7 @@ class SuperNanno(App):
             ".cpp": "cpp"
         }
 
-        editor = self.query_one("#editor", TextArea)
+        editor = self.get_editor()
         lang = language_map.get(ext)
         if lang:
             editor.language = lang
@@ -325,26 +291,47 @@ class SuperNanno(App):
                 editor.language = None
         editor.refresh()
 
+    def set_state(self, state):
+        if self.ctx.state:
+            self.ctx.state.on_exit(self.ctx)
+
+        self.ctx.state = state
+
+        if state:
+            state.on_enter(self.ctx)
+
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
+        """Atualiza o status bar de forma segura."""
+        self._status_locked = True
+
+        # Remove todas as classes de cor
         self.status.remove_class("success")
+        self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
 
+        # Aplica a cor correta
         if status_type == "success":
             self.status.add_class("success")
-        elif status_type == "error":
-            self.status.add_class("error")
+        elif status_type == "info":
+            self.status.add_class("info")
         elif status_type == "warning":
             self.status.add_class("warning")
+        elif status_type == "error":
+            self.status.add_class("error")
 
         self.status.update(text)
 
+        # Cancela tarefa anterior se existir
         if hasattr(self, "_status_task") and self._status_task:
             self._status_task.cancel()
 
-        if delay and next_text:
+        # Se tiver delay, agenda a restauração do status
+        if delay is not None:
+            next_text = next_text or self.get_default_status()
             self._status_task = self.run_worker(
-                self.__reset_status__(delay, next_text)
+                self.__unlock_status_after__(delay, next_text),
+                name="status_unlock"
             )
 
 if __name__ == "__main__":
