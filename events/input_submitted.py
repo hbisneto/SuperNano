@@ -93,16 +93,14 @@ HANDLERS = {
 # ========================= FINALIZATION =========================
 
 def _finalize(ctx, event):
-    """Limpa tudo após submeter um input"""
     ctx.app.input_mode = None
 
-    # Esconde o INPUT individual
-    event.input.display = False
-
-    # ✅ ESSES DOIS LINHAS ERAM O PROBLEMA
-    if getattr(ctx.app, 'path_container', None):
+    # Fecha os containers corretos
+    if hasattr(ctx.app, "path_container"):
         ctx.app.path_container.display = False
-    if getattr(ctx.app, 'search_container', None):
+
+    if hasattr(ctx.app, "search_container"):
         ctx.app.search_container.display = False
 
-    ctx.app.editor.focus()
+    # Garante foco no editor
+    ctx.editor.focus()

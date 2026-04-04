@@ -204,6 +204,8 @@ class SuperNanno(App):
             content = self.ctx.file_manager.read(path)
             editor = self.get_editor()
 
+            self.set_language(path)
+
             self._loading = True
             editor.load_text(content)
             self._loading = False
@@ -212,10 +214,10 @@ class SuperNanno(App):
             self.ctx.current_path = path
             self.ctx.is_dirty = False
 
-            self.set_language(path)
             self.save_session_state(path)
 
             editor.focus()
+            # editor.refresh()
 
             # if not silent:
             #     self.ctx.status.set(
@@ -284,6 +286,7 @@ class SuperNanno(App):
             ".py": "python",
             ".js": "javascript",
             ".ts": "typescript",
+            ".cs": "csharp",
             ".json": "json",
             ".html": "html",
             ".css": "css",
