@@ -4,14 +4,12 @@ def execute(ctx):
     editor = ctx.editor
 
     ctx.app._loading = True
-    editor.text = ""
+    editor.language = None
+    editor.load_text("")
     ctx.app._loading = False
 
     ctx.current_path = None
-    ctx.editor_state.mark_saved("")
     ctx.is_dirty = False
-
-    editor.language = None
-    editor.focus()
+    ctx.editor_state.mark_saved("")
 
     ctx.status.set("New file (unsaved)")

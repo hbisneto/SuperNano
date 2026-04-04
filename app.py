@@ -63,17 +63,19 @@ class SuperNanno(App):
     def compose(self) -> ComposeResult:
         # Centraliza a criação do layout
         (header, 
-         self.sidebar, 
-         main_content, 
-         footer, 
-         self.directory_tree, 
-         self.search_bar, 
-         self.path_input, 
-         self.editor, 
-         self.status) = create_layout()
+            self.sidebar, 
+            main_content, 
+            footer, 
+            self.directory_tree, 
+            self.search_bar, 
+            self.path_input, 
+            self.editor, 
+            self.status,
+            self.search_container,   # novo
+            self.path_container) = create_layout()
 
         # Define o texto inicial do editor
-        self.editor.text = WELCOME
+        self.editor.load_text(WELCOME)
 
         # Monta a tela principal
         yield header
@@ -176,15 +178,17 @@ class SuperNanno(App):
     def get_default_status(self):
         editor = self.get_editor()
         dirty_flag = "*" if self.ctx.is_dirty else ""
+        lang = getattr(editor, 'language', None) or "text"
 
         if self.ctx.current_path:
-            return f"{self.ctx.current_path}{dirty_flag} | {editor.language} | UTF-8"
-        return f"SuperNanno | {editor.language} | UTF-8"
+            return f"{self.ctx.current_path}{dirty_flag} | {lang} | UTF-8"
+        return f"SuperNanno | {lang} | UTF-8"
 
     def get_editor(self):
         return self.query_one("#editor", TextArea)
 
     def load_file(self, path_str, silent=False):
+        """Carrega um arquivo e atualiza o editor + session + config"""
         try:
             path = Path(path_str)
 
@@ -199,20 +203,31 @@ class SuperNanno(App):
 
             content = self.ctx.file_manager.read(path)
             editor = self.get_editor()
+
             self._loading = True
-            editor.text = content
+            editor.load_text(content)
             self._loading = False
+
             self.ctx.editor_state.mark_saved(content)
             self.ctx.current_path = path
             self.ctx.is_dirty = False
-            self.set_language(path)
 
-            if not silent:
-                self.ctx.status.set(f"{path} loaded", delay=1, next_text=self.get_default_status())
+            self.set_language(path)
+            self.save_session_state(path)
+
+            editor.focus()
+
+            # if not silent:
+            #     self.ctx.status.set(
+            #         f"Opened: {path.name}",
+            #         delay=2,
+            #         next_text=self.get_default_status(),
+            #         status_type="info"
+            #     )
 
         except Exception as e:
             self.ctx.status.set(
-                f"(Error): {e}",
+                f"(Error loading file): {e}",
                 delay=5,
                 status_type="error"
             )
@@ -269,7 +284,6 @@ class SuperNanno(App):
             ".py": "python",
             ".js": "javascript",
             ".ts": "typescript",
-            ".cs": "csharp",
             ".json": "json",
             ".html": "html",
             ".css": "css",
@@ -280,15 +294,15 @@ class SuperNanno(App):
         }
 
         editor = self.get_editor()
-        lang = language_map.get(ext)
-        if lang:
-            editor.language = lang
-        else:
+        editor.language = language_map.get(ext)
+
+        if not editor.language:
             try:
                 lexer = guess_lexer(editor.text)
-                editor.language = lexer.aliases[0] if lexer.aliases else None
+                editor.language = lexer.aliases[0] if lexer.aliases else "text"
             except Exception:
-                editor.language = None
+                editor.language = "text"
+
         editor.refresh()
 
     def set_state(self, state):

@@ -10,5 +10,5 @@ def execute(ctx):
     input_widget.focus()
 
     ctx.app.input_mode = "open"
-    ctx.app.input_area.display = True          # ← ativa o container padronizado
+    ctx.app.path_container.display = True          # ← mudou
     ctx.status.set("Enter file or folder path (ENTER)")

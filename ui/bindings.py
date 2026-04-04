@@ -23,14 +23,14 @@ Welcome! This editor works like a simple system text editor.
 
 Keyboard shortcuts:
 
-CTRL + B  → Show/Hide Sidebar
-CTRL + N  → New File
-CTRL + O  → Open File
-CTRL + S  → Save File
-CTRL + R  → Read file
-CTRL + F  → Search Text
-CTRL + Q  → Quit Editor
-F10  → Settings
+CTRL + B: Show/Hide Sidebar
+CTRL + N: New File
+CTRL + O: Open File
+CTRL + S: Save File
+CTRL + R: Read file
+CTRL + F: Search Text
+CTRL + Q: Quit Editor
+F10: Settings
 
 Start typing to edit the document.
 """

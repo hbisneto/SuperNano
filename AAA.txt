@@ -1,0 +1,12 @@
+Chat, esses sao os arquivos que contem a arvore de diretorios e codigo-fonte do SuperNanno. Alem de uma image, que inclusive, voce pode ver que tem todo o codigo do python pintado como eu estava tentando fazer usando o recurso de temas para o SuperNanno.
+ 
+Eu gostaria de poder deixar o SuperNanno com um esquema de cores seguindo uma paleta de cores como essa:
+ 
+#454990
+#931FE0
+#561FE0
+#1F66E0
+#D41FE0
+#8B69E0
+ 
+Importante: Alem do editor, todo o layout deve seguir o esquema de cores. Incluindo o DirectoryTree. O Status, pode manter o esquema que ja existe (verde para sucesso, azul para informacao, vermelho pra erro e amarelo para atencao/warning)
