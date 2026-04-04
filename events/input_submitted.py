@@ -78,7 +78,7 @@ def _handle_save(ctx, event, value):
         ctx.editor_state.mark_saved(ctx.editor.text)
         ctx.is_dirty = False
         ctx.status.set(f"(Saved): {path.name}", delay=3, next_text=ctx.app.get_default_status(), status_type="success")
-        ctx.app.refresh_file_list()
+        ctx.app.directory_tree.reload()
     except Exception as e:
         ctx.status.error(f"(Error): {e}", delay=5)
 

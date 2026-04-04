@@ -2,6 +2,7 @@
 
 def execute(ctx):
     editor = ctx.editor
+    editor.focus()
 
     ctx.app._loading = True
     editor.language = None

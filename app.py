@@ -231,6 +231,8 @@ class SuperNanno(App):
             )
 
     def prompt_save_as(self):
+        path_container = self.query_one("#path_container")
+        path_container.display = True
         input_widget = self.query_one("#path_input", Input)
         input_widget.display = True
         input_widget.placeholder = "Save as: ./file.txt"
@@ -239,13 +241,13 @@ class SuperNanno(App):
         self.input_mode = "save"
         self.status.update("Enter path to save file")
 
-    def refresh_file_list(self):
-        self.file_list.clear()
-        for f in Path(".").iterdir():
-            if f.is_file():
-                item = ListItem(Static(f.name))
-                item.path = f
-                self.file_list.append(item)
+    # def refresh_file_list(self):
+    #     self.file_list.clear()
+    #     for f in Path(".").iterdir():
+    #         if f.is_file():
+    #             item = ListItem(Static(f.name))
+    #             item.path = f
+    #             self.file_list.append(item)
 
     def restore_session(self):
         """Restore the last opened file using ConfigManager"""
