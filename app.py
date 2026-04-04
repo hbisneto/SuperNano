@@ -217,15 +217,15 @@ class SuperNanno(App):
             self.save_session_state(path)
 
             editor.focus()
-            # editor.refresh()
 
-            # if not silent:
-            #     self.ctx.status.set(
-            #         f"Opened: {path.name}",
-            #         delay=2,
-            #         next_text=self.get_default_status(),
-            #         status_type="info"
-            #     )
+            # Feedback sempre visível (mesmo quando chamado do DirectoryTree)
+            if not silent:
+                self.ctx.status.set(
+                    f"Opened: {path.name}",
+                    delay=2,
+                    next_text=self.get_default_status(),
+                    status_type="info"
+                )
 
         except Exception as e:
             self.ctx.status.set(
@@ -304,7 +304,7 @@ class SuperNanno(App):
                 lexer = guess_lexer(editor.text)
                 editor.language = lexer.aliases[0] if lexer.aliases else "text"
             except Exception:
-                editor.language = "text"
+                editor.language = None
 
         editor.refresh()
 
