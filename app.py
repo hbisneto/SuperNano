@@ -302,7 +302,7 @@ class SuperNanno(App):
         if not editor.language:
             try:
                 lexer = guess_lexer(editor.text)
-                editor.language = lexer.aliases[0] if lexer.aliases else "text"
+                editor.language = lexer.aliases[0] if lexer.aliases else None
             except Exception:
                 editor.language = None
 

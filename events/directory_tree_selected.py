@@ -25,8 +25,7 @@ def handle(ctx, event):
         if ctx.is_dirty and not getattr(app, "confirm_action", None):
             app.confirm_action = lambda: app.load_file(str(path))
             ctx.status.warning(
-                "File has unsaved changes! Click again to discard.",
-                status_type="warning"
+                "File has unsaved changes! Click again to discard."
             )
             return
 

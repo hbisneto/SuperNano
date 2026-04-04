@@ -16,6 +16,9 @@ def execute(ctx):
 
         else:
             app._confirm_quit = True
-            ctx.status.set("Unsaved changes! Press CTRL+Q again to exit.")
+            # ctx.status.set("Unsaved changes! Press CTRL+Q again to exit.")
+            ctx.status.warning(
+                "Unsaved changes! Press CTRL+Q again to exit."
+            )
     else:
         app.exit()
