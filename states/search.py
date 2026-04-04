@@ -10,11 +10,11 @@ class SearchState:
         self.current_match_index = -1
 
     def on_enter(self, ctx):
-        """CTRL+F: abre SOMENTE o campo Find"""
+        """CTRL+F: Opens the Find field"""
 
         ctx.app.search_container.display = True
-        ctx.app.search_bar.show()                    # agora existe novamente
-        ctx.app.search_bar.hide_replace()            # garante Replace escondido
+        ctx.app.search_bar.show()
+        ctx.app.search_bar.hide_replace()
 
         editor = ctx.editor
         if hasattr(editor, 'cursor_location') and editor.cursor_location:
@@ -57,9 +57,9 @@ class SearchState:
                     self._do_replace(ctx, value)
                     self.next_match(ctx)
 
-    # ==================== NOVO: Controle de expansão com setas ====================
+    ###==================== NEW: Arrow Key Control ====================###
     def handle_key(self, ctx, event):
-        """Chamado pelo key.py quando estamos em SearchState"""
+        """Called by key.py when we are in SearchState"""
         if event.key == "down":
             ctx.app.search_bar.show_replace()
             ctx.status.set("Replace mode • ↑ for Find only • ESC to cancel")
@@ -70,7 +70,6 @@ class SearchState:
             return True
         return False
 
-    # (mantenha os métodos _find_matches, _go_to_match, next_match, prev_match, _do_replace iguais)
     def next_match(self, ctx):
         if not self.matches: return
         self.current_match_index = (self.current_match_index + 1) % len(self.matches)

@@ -1,9 +1,6 @@
 # ui/search_bar.py
 
-from textual.containers import (
-    Horizontal, 
-    Vertical
-    )
+from textual.containers import Vertical
 from textual.widgets import Input
 
 class SearchBar(Vertical):
@@ -11,32 +8,32 @@ class SearchBar(Vertical):
         self.search_input = Input(placeholder="Find", id="search_input")
         self.replace_input = Input(placeholder="Replace...", id="replace_input")
         
-        self.replace_input.display = False   # começa escondido
+        self.replace_input.display = False
         
         yield self.search_input
         yield self.replace_input
 
     def show(self):
-        """Mostra a barra de busca (Find)"""
+        """Show the searchbar (Find)"""
         self.display = True
         self.search_input.focus()
 
     def hide(self):
-        """Esconde toda a barra de busca"""
+        """Hide the searchbar (Find)"""
         self.display = False
 
     def show_replace(self):
-        """Mostra o campo Replace"""
+        """Show the Replace field"""
         self.replace_input.display = True
         self.replace_input.focus()
 
     def hide_replace(self):
-        """Esconde o campo Replace"""
+        """Hide the Replace field"""
         self.replace_input.display = False
         self.search_input.focus()
 
     def toggle_replace(self):
-        """Alterna visibilidade do Replace"""
+        """Toggle the visibility of the Replace field"""
         if self.replace_input.display:
             self.hide_replace()
         else:

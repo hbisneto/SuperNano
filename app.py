@@ -61,7 +61,6 @@ class SuperNanno(App):
             self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
-        # Centraliza a criação do layout
         (header, 
             self.sidebar, 
             main_content, 
@@ -71,13 +70,11 @@ class SuperNanno(App):
             self.path_input, 
             self.editor, 
             self.status,
-            self.search_container,   # novo
+            self.search_container,
             self.path_container) = create_layout()
 
-        # Define o texto inicial do editor
         self.editor.load_text(WELCOME)
 
-        # Monta a tela principal
         yield header
         yield Horizontal(
             self.sidebar,
@@ -188,7 +185,7 @@ class SuperNanno(App):
         return self.query_one("#editor", TextArea)
 
     def load_file(self, path_str, silent=False):
-        """Carrega um arquivo e atualiza o editor + session + config"""
+        """Load a file and update the editor content, language, and status."""
         try:
             path = Path(path_str)
 
@@ -218,7 +215,6 @@ class SuperNanno(App):
 
             editor.focus()
 
-            # Feedback sempre visível (mesmo quando chamado do DirectoryTree)
             if not silent:
                 self.ctx.status.set(
                     f"Opened: {path.name}",
@@ -228,7 +224,7 @@ class SuperNanno(App):
                 )
 
         except Exception as e:
-            self.ctx.status.set(
+            self.ctx.status.error(
                 f"(Error loading file): {e}",
                 delay=5,
                 status_type="error"
@@ -252,7 +248,7 @@ class SuperNanno(App):
                 self.file_list.append(item)
 
     def restore_session(self):
-        """Restaura o último arquivo aberto usando o ConfigManager"""
+        """Restore the last opened file using ConfigManager"""
         if not self.ctx.config.get("settings.startup.restore_last_session", True):
             return
 
@@ -273,7 +269,7 @@ class SuperNanno(App):
             )
 
     def save_session_state(self, file_path: Path | None):
-        """Salva o último arquivo aberto"""
+        """Saves the last opened file path to the config for session restoration."""
         if not file_path:
             return
         self.ctx.config.set("settings.session.last_opened_file", str(file_path))
@@ -318,16 +314,14 @@ class SuperNanno(App):
             state.on_enter(self.ctx)
 
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
-        """Atualiza o status bar de forma segura."""
+        """Update the status bar in a safe manner."""
         self._status_locked = True
 
-        # Remove todas as classes de cor
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
 
-        # Aplica a cor correta
         if status_type == "success":
             self.status.add_class("success")
         elif status_type == "info":
@@ -339,11 +333,9 @@ class SuperNanno(App):
 
         self.status.update(text)
 
-        # Cancela tarefa anterior se existir
         if hasattr(self, "_status_task") and self._status_task:
             self._status_task.cancel()
 
-        # Se tiver delay, agenda a restauração do status
         if delay is not None:
             next_text = next_text or self.get_default_status()
             self._status_task = self.run_worker(

@@ -12,4 +12,4 @@ def execute(ctx):
     ctx.is_dirty = False
     ctx.editor_state.mark_saved("")
 
-    ctx.status.set("New file (unsaved)")
+    ctx.status.info("New file (unsaved)")

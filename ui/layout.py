@@ -1,9 +1,6 @@
 # ui/layout.py
 
-from textual.containers import (
-    Horizontal, 
-    Vertical
-)
+from textual.containers import Vertical
 from textual.widgets import (
     DirectoryTree,
     Static,
@@ -15,10 +12,8 @@ from textual.widgets import (
 
 from .search_bar import SearchBar
 
-# ui/layout.py  (add input_area to the return tuple)
-
 def create_layout() -> tuple:
-    """Layout com inputs na base do editor"""
+    """Layout with inputs and widgets for the app."""
 
     # Sidebar
     directory_tree = DirectoryTree(path=".", id="directory_tree")
@@ -28,12 +23,12 @@ def create_layout() -> tuple:
         id="sidebar"
     )
 
-    # Search Container (Find + Replace expansível)
+    # Search Container (Find + Replace expansible)
     search_bar = SearchBar()
     search_container = Vertical(search_bar, id="search_container")
     search_container.display = False
 
-    # Path Container (para CTRL+O / Save As)
+    # Path Container (CTRL+O / Save As)
     path_input = Input(
         placeholder="Enter file path or folder...",
         id="path_input"

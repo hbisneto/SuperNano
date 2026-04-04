@@ -20,7 +20,6 @@ def handle(ctx, event):
             ctx.app.set_state(None)
             return
 
-        # Fecha containers abertos
         if getattr(ctx.app, 'path_container', None) and ctx.app.path_container.display:
             ctx.app.path_container.display = False
             ctx.app.editor.focus()

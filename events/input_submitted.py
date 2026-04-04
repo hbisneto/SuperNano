@@ -15,15 +15,15 @@ def handle(ctx, event):
 
     _finalize(ctx, event)
 
-# ========================= HANDLERS =========================
+###==================== HANDLERS ====================###
 
 def _handle_read_file(ctx, event, value):
     path = Path(value).expanduser()
     if not path.exists():
-        ctx.status.set(f"File not found: {path}", delay=3, status_type="error")
+        ctx.status.warning(f"File not found: {path}", delay=3, status_type="error")
         return
     if path.is_dir():
-        ctx.status.set(f"Cannot read a directory: {path}", delay=3, status_type="warning")
+        ctx.status.warning(f"Cannot read a directory: {path}", delay=3, status_type="warning")
         return
 
     try:
@@ -47,16 +47,15 @@ def _handle_read_file(ctx, event, value):
 
         editor.text = new_text
         editor.cursor_location = editor.document.get_index_from_location(new_index)
-        ctx.status.set(f"(Inserted): {path}", delay=3, status_type="success")
+        ctx.status.success(f"(Inserted): {path}", delay=3)
     except Exception as e:
-        ctx.status.set(f"(Error): {e}", delay=3, status_type="error")
-
+        ctx.status.error(f"(Error): {e}", delay=3)
 
 def _handle_open(ctx, event, value):
     path = Path(value).expanduser().resolve()
 
     if not path.exists():
-        ctx.status.set(f"Path not found: {path}", delay=3, status_type="error")
+        ctx.status.error(f"(Error) - Path not found: {path}", delay=3)
         return
 
     app = ctx.app
@@ -67,10 +66,9 @@ def _handle_open(ctx, event, value):
     elif path.is_dir():
         app.directory_tree.path = str(path)
         app.directory_tree.reload()
-        ctx.status.set(f"Loaded folder: {path.name}", delay=2, status_type="info")
+        ctx.status.info(f"(Loaded folder): {path.name}", delay=2)
     else:
-        ctx.status.set("Not a file or folder", delay=3, status_type="warning")
-
+        ctx.status.warning("Not a file or folder", delay=3)
 
 def _handle_save(ctx, event, value):
     path = Path(value).expanduser()
@@ -82,7 +80,7 @@ def _handle_save(ctx, event, value):
         ctx.status.set(f"(Saved): {path.name}", delay=3, next_text=ctx.app.get_default_status(), status_type="success")
         ctx.app.refresh_file_list()
     except Exception as e:
-        ctx.status.set(f"(Error): {e}", delay=5, status_type="error")
+        ctx.status.error(f"(Error): {e}", delay=5)
 
 
 HANDLERS = {
@@ -90,17 +88,15 @@ HANDLERS = {
     "save": _handle_save,
 }
 
-# ========================= FINALIZATION =========================
+###==================== FINALIZATION ====================###
 
 def _finalize(ctx, event):
     ctx.app.input_mode = None
 
-    # Fecha os containers corretos
     if hasattr(ctx.app, "path_container"):
         ctx.app.path_container.display = False
 
     if hasattr(ctx.app, "search_container"):
         ctx.app.search_container.display = False
 
-    # Garante foco no editor
     ctx.editor.focus()

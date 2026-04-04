@@ -13,13 +13,11 @@ def handle(ctx, event):
     else:
         app.load_file(str(event.item.path))
 
-
 def _clear_status(app):
     app.status.remove_class("success")
     app.status.remove_class("info")
     app.status.remove_class("warning")
     app.status.remove_class("error")
-
 
 def _handle_dirty(ctx, event):
     app = ctx.app
@@ -32,4 +30,4 @@ def _handle_dirty(ctx, event):
         return
 
     app.confirm_action = lambda: app.load_file(str(event.item.path))
-    ctx.status.set("Click again to discard changes")
+    ctx.status.warning("Click again to discard changes")
