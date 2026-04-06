@@ -12,7 +12,7 @@ def handle(ctx):
     ctx.is_dirty = ctx.editor_state.is_dirty(editor.text)
     dirty_flag = "*" if ctx.is_dirty else ""
 
-    lang = getattr(editor, 'language', None) or "text"
+    lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
 
     if ctx.current_path is None:
         status_text = f"SuperNanno | {lang} | UTF-8"

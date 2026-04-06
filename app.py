@@ -175,8 +175,8 @@ class SuperNanno(App):
     def get_default_status(self):
         editor = self.get_editor()
         dirty_flag = "*" if self.ctx.is_dirty else ""
-        lang = getattr(editor, 'language', None) or "text"
-
+        lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
+        
         if self.ctx.current_path:
             return f"{self.ctx.current_path}{dirty_flag} | {lang} | UTF-8"
         return f"SuperNanno | {lang} | UTF-8"
