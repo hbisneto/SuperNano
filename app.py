@@ -1,6 +1,6 @@
 # app.py
 
-from __future__ import annotations
+import argparse
 import asyncio
 import sys
 from pathlib import Path
@@ -10,10 +10,8 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import (
     DirectoryTree,
-    Static,
     TextArea,
     ListView,
-    ListItem,
     Input
 )
 
@@ -44,11 +42,25 @@ from ui.bindings import BINDINGS, WELCOME
 from ui.settings.screen import SettingsScreen
 from ui.layout import create_layout
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog="supernanno",
+        description="Modern Nano-like terminal text editor"
+    )
+
+    parser.add_argument(
+        "file",
+        nargs="?",
+        help="File to open"
+    )
+
+    return parser.parse_args()
+
 class SuperNanno(App):
     CSS_PATH = "style.tcss"
     BINDINGS = BINDINGS
 
-    def __init__(self):
+    def __init__(self, file_path: str | None = None):
         super().__init__()
         self.input_mode = None
         self.temp_file = None
@@ -57,8 +69,11 @@ class SuperNanno(App):
         self._confirm_quit = False
         self._status_locked = False
         self.ctx = AppContext(self)
-        if len(sys.argv) > 1:
-            self.ctx.current_path = Path(sys.argv[1])
+
+        if file_path:
+            self.ctx.current_path = Path(file_path)
+        # if len(sys.argv) > 1:
+        #     self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
         (header, 
@@ -344,6 +359,10 @@ class SuperNanno(App):
                 self.__unlock_status_after__(delay, next_text),
                 name="status_unlock"
             )
+def main():
+    args = parse_args()
+    SuperNanno(file_path=args.file).run()
 
 if __name__ == "__main__":
-    SuperNanno().run()
+    main()
+    # SuperNanno().run()

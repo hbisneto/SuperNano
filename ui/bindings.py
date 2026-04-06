@@ -17,7 +17,7 @@ SETTINGS_BINDINGS = [
 ]
 
 WELCOME = """\
-# SuperNanno 0.3.0
+# SuperNanno 0.4.0
 
 Welcome! This editor works like a simple system text editor.
 

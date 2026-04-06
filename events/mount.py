@@ -1,7 +1,15 @@
 # events/mount.py
 
+from pathlib import Path
+
 def handle(ctx):
-    if ctx.current_path and ctx.current_path.exists():
-        ctx.app.load_file(str(ctx.current_path.absolute()))
-    else:
-        ctx.app.restore_session()
+    app = ctx.app
+
+    if ctx.current_path:
+        path = Path(ctx.current_path)
+
+        if path.exists() and path.is_file():
+            app.load_file(str(path), silent=True)
+            return
+
+    app.restore_session()
