@@ -7,14 +7,14 @@ class StatusService:
         self.debug_mode = debug
         self.history = []
 
-    # ================= CORE =================
+    ###==================== CORE ====================###
 
     def set(self, text, delay=None, next_text=None, status_type="normal"):
         self._log(text, status_type)
 
         self.app.set_status(text, delay, next_text, status_type)
 
-    # ================= LOG SYSTEM =================
+    ###==================== LOG SYSTEM ====================###
 
     def _log(self, text, level):
         entry = {
@@ -28,7 +28,7 @@ class StatusService:
         if self.debug_mode:
             print(f"[{entry['time']}] [{level.upper()}] {text}")
 
-    # ================= HELPERS =================
+    ###==================== HELPERS ====================###
 
     def info(self, text, **kwargs):
         self.set(text, status_type="info", **kwargs)
@@ -46,8 +46,8 @@ class StatusService:
         if self.debug_mode:
             self._log(text, "debug")
 
-    # ================= HISTORY =================
-
+    ###==================== HISTORY ====================###
+    
     def get_last(self, n=10):
         return self.history[-n:]
 

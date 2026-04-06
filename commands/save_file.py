@@ -18,10 +18,9 @@ def execute(ctx):
             )
 
         except Exception as e:
-            ctx.status.set(
+            ctx.status.error(
                 text=f"(Error): {e}",
-                delay=3,
-                status_type="error"
+                delay=3
             )
     else:
         save_as.execute(ctx)

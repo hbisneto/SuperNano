@@ -61,21 +61,20 @@ class SuperNanno(App):
             self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
-        # Centraliza a criação do layout
         (header, 
-         self.sidebar, 
-         main_content, 
-         footer, 
-         self.directory_tree, 
-         self.search_bar, 
-         self.path_input, 
-         self.editor, 
-         self.status) = create_layout()
+            self.sidebar, 
+            main_content, 
+            footer, 
+            self.directory_tree, 
+            self.search_bar, 
+            self.path_input, 
+            self.editor, 
+            self.status,
+            self.search_container,
+            self.path_container) = create_layout()
 
-        # Define o texto inicial do editor
-        self.editor.text = WELCOME
+        self.editor.load_text(WELCOME)
 
-        # Monta a tela principal
         yield header
         yield Horizontal(
             self.sidebar,
@@ -176,15 +175,17 @@ class SuperNanno(App):
     def get_default_status(self):
         editor = self.get_editor()
         dirty_flag = "*" if self.ctx.is_dirty else ""
-
+        lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
+        
         if self.ctx.current_path:
-            return f"{self.ctx.current_path}{dirty_flag} | {editor.language} | UTF-8"
-        return f"SuperNanno | {editor.language} | UTF-8"
+            return f"{self.ctx.current_path}{dirty_flag} | {lang} | UTF-8"
+        return f"SuperNanno | {lang} | UTF-8"
 
     def get_editor(self):
         return self.query_one("#editor", TextArea)
 
     def load_file(self, path_str, silent=False):
+        """Load a file and update the editor content, language, and status."""
         try:
             path = Path(path_str)
 
@@ -199,25 +200,39 @@ class SuperNanno(App):
 
             content = self.ctx.file_manager.read(path)
             editor = self.get_editor()
+
+            self.set_language(path)
+
             self._loading = True
-            editor.text = content
+            editor.load_text(content)
             self._loading = False
+
             self.ctx.editor_state.mark_saved(content)
             self.ctx.current_path = path
             self.ctx.is_dirty = False
-            self.set_language(path)
+
+            self.save_session_state(path)
+
+            editor.focus()
 
             if not silent:
-                self.ctx.status.set(f"{path} loaded", delay=1, next_text=self.get_default_status())
+                self.ctx.status.set(
+                    f"Opened: {path.name}",
+                    delay=2,
+                    next_text=self.get_default_status(),
+                    status_type="info"
+                )
 
         except Exception as e:
-            self.ctx.status.set(
-                f"(Error): {e}",
+            self.ctx.status.error(
+                f"(Error loading file): {e}",
                 delay=5,
                 status_type="error"
             )
 
     def prompt_save_as(self):
+        path_container = self.query_one("#path_container")
+        path_container.display = True
         input_widget = self.query_one("#path_input", Input)
         input_widget.display = True
         input_widget.placeholder = "Save as: ./file.txt"
@@ -226,16 +241,16 @@ class SuperNanno(App):
         self.input_mode = "save"
         self.status.update("Enter path to save file")
 
-    def refresh_file_list(self):
-        self.file_list.clear()
-        for f in Path(".").iterdir():
-            if f.is_file():
-                item = ListItem(Static(f.name))
-                item.path = f
-                self.file_list.append(item)
+    # def refresh_file_list(self):
+    #     self.file_list.clear()
+    #     for f in Path(".").iterdir():
+    #         if f.is_file():
+    #             item = ListItem(Static(f.name))
+    #             item.path = f
+    #             self.file_list.append(item)
 
     def restore_session(self):
-        """Restaura o último arquivo aberto usando o ConfigManager"""
+        """Restore the last opened file using ConfigManager"""
         if not self.ctx.config.get("settings.startup.restore_last_session", True):
             return
 
@@ -256,7 +271,7 @@ class SuperNanno(App):
             )
 
     def save_session_state(self, file_path: Path | None):
-        """Salva o último arquivo aberto"""
+        """Saves the last opened file path to the config for session restoration."""
         if not file_path:
             return
         self.ctx.config.set("settings.session.last_opened_file", str(file_path))
@@ -280,15 +295,15 @@ class SuperNanno(App):
         }
 
         editor = self.get_editor()
-        lang = language_map.get(ext)
-        if lang:
-            editor.language = lang
-        else:
+        editor.language = language_map.get(ext)
+
+        if not editor.language:
             try:
                 lexer = guess_lexer(editor.text)
                 editor.language = lexer.aliases[0] if lexer.aliases else None
             except Exception:
                 editor.language = None
+
         editor.refresh()
 
     def set_state(self, state):
@@ -301,16 +316,14 @@ class SuperNanno(App):
             state.on_enter(self.ctx)
 
     def set_status(self, text, delay=None, next_text=None, status_type="normal"):
-        """Atualiza o status bar de forma segura."""
+        """Update the status bar in a safe manner."""
         self._status_locked = True
 
-        # Remove todas as classes de cor
         self.status.remove_class("success")
         self.status.remove_class("info")
         self.status.remove_class("warning")
         self.status.remove_class("error")
 
-        # Aplica a cor correta
         if status_type == "success":
             self.status.add_class("success")
         elif status_type == "info":
@@ -322,11 +335,9 @@ class SuperNanno(App):
 
         self.status.update(text)
 
-        # Cancela tarefa anterior se existir
         if hasattr(self, "_status_task") and self._status_task:
             self._status_task.cancel()
 
-        # Se tiver delay, agenda a restauração do status
         if delay is not None:
             next_text = next_text or self.get_default_status()
             self._status_task = self.run_worker(

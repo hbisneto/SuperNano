@@ -2,16 +2,15 @@
 
 def execute(ctx):
     editor = ctx.editor
+    editor.focus()
 
     ctx.app._loading = True
-    editor.text = ""
+    editor.language = None
+    editor.load_text("")
     ctx.app._loading = False
 
     ctx.current_path = None
-    ctx.editor_state.mark_saved("")
     ctx.is_dirty = False
+    ctx.editor_state.mark_saved("")
 
-    editor.language = None
-    editor.focus()
-
-    ctx.status.set("New file (unsaved)")
+    ctx.status.info("New file (unsaved)")

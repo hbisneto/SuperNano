@@ -22,7 +22,9 @@
             "line_numbers": true,
             "theme": "dark",
             "status_bar": true,
-            "minimap": false
+            "minimap": false,
+            "mouse_support": true,
+            "smooth_scrolling": true
         },
         "search": {
             "case_sensitive": false,

@@ -1,9 +1,6 @@
 # ui/layout.py
 
-from textual.containers import (
-    Horizontal, 
-    Vertical
-)
+from textual.containers import Vertical
 from textual.widgets import (
     DirectoryTree,
     Static,
@@ -16,58 +13,54 @@ from textual.widgets import (
 from .search_bar import SearchBar
 
 def create_layout() -> tuple:
-    """
-    Cria e retorna todos os componentes principais da interface.
-    Retorna: (header, sidebar, main_content, footer)
-    """
-    
-    # === Sidebar com DirectoryTree ===
-    directory_tree = DirectoryTree(path=".", id="sidebar")
+    """Layout with inputs and widgets for the app."""
 
+    # Sidebar
+    directory_tree = DirectoryTree(path=".", id="directory_tree")
     sidebar = Vertical(
         Static("EXPLORER", classes="title"),
         directory_tree,
         id="sidebar"
     )
 
-    # === Input Area (Search + Path Input) ===
+    # Search Container (Find + Replace expansible)
     search_bar = SearchBar()
+    search_container = Vertical(search_bar, id="search_container")
+    search_container.display = False
+
+    # Path Container (CTRL+O / Save As)
     path_input = Input(
         placeholder="Enter file path or folder...",
         id="path_input"
     )
-    path_input.display = False
+    path_container = Vertical(path_input, id="path_container")
+    path_container.display = False
 
-    input_area = Vertical(
-        search_bar,
-        path_input,
-        id="input_area"
-    )
-    input_area.display = False
-
-    # === Editor + Status ===
+    # Editor + Inputs + Status
     editor = TextArea.code_editor("", id="editor", language="markdown")
-    
     status = Static("SuperNanno Ready", id="status")
 
     main_content = Vertical(
         editor,
-        input_area,
+        search_container,
+        path_container,
         status,
         id="main"
     )
 
-    # === Header e Footer ===
     header = Header()
     footer = Footer()
 
     return (
-        header, 
-        sidebar, 
-        main_content, 
-        footer, 
-        directory_tree, 
-        search_bar, 
-        path_input, 
-        editor, status
+        header,
+        sidebar,
+        main_content,
+        footer,
+        directory_tree,
+        search_bar,
+        path_input,
+        editor,
+        status,
+        search_container,
+        path_container
     )
