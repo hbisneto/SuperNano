@@ -70,10 +70,10 @@ class SuperNanno(App):
         self._status_locked = False
         self.ctx = AppContext(self)
 
+        self.explicit_file_open = file_path is not None
+
         if file_path:
             self.ctx.current_path = Path(file_path)
-        # if len(sys.argv) > 1:
-        #     self.ctx.current_path = Path(sys.argv[1])
 
     def compose(self) -> ComposeResult:
         (header, 
@@ -256,16 +256,12 @@ class SuperNanno(App):
         self.input_mode = "save"
         self.status.update("Enter path to save file")
 
-    # def refresh_file_list(self):
-    #     self.file_list.clear()
-    #     for f in Path(".").iterdir():
-    #         if f.is_file():
-    #             item = ListItem(Static(f.name))
-    #             item.path = f
-    #             self.file_list.append(item)
-
     def restore_session(self):
         """Restore the last opened file using ConfigManager"""
+
+        if self.explicit_file_open:
+            return
+        
         if not self.ctx.config.get("settings.startup.restore_last_session", True):
             return
 
@@ -287,6 +283,10 @@ class SuperNanno(App):
 
     def save_session_state(self, file_path: Path | None):
         """Saves the last opened file path to the config for session restoration."""
+
+        if self.explicit_file_open:
+            return
+    
         if not file_path:
             return
         self.ctx.config.set("settings.session.last_opened_file", str(file_path))
