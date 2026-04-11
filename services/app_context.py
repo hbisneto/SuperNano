@@ -17,10 +17,9 @@ class AppContext:
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)
-        self.config = None
+        self.config = ConfigManager()
 
         if not app.explicit_file_open:
-            self.config = ConfigManager()
             self.session = SessionManager(
                 create_if_missing=not app.explicit_file_open
             )

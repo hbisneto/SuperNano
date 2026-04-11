@@ -73,7 +73,6 @@ class SuperNanno(App):
         self.ctx = AppContext(self)
         self.config_applier = ConfigApplier(self)
 
-
         if file_path:
             self.ctx.current_path = Path(file_path)
 
