@@ -1,7 +1,7 @@
 # states/search.py
 
 from textual.widgets import Input
-from textual.widgets.text_area import Selection   # opcional, mas recomendado
+from textual.widgets.text_area import Selection
 
 class SearchState:
     def __init__(self):

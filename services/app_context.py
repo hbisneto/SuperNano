@@ -5,6 +5,7 @@ from core.editor import EditorState
 from core.file_manager import FileManager
 from core.status import StatusService
 from services.config_manager import ConfigManager
+from services.session_manager import SessionManager
 
 class AppContext:
     def __init__(self, app):
@@ -16,7 +17,13 @@ class AppContext:
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)
-        self.config = ConfigManager()
+        self.config = None
+
+        if not app.explicit_file_open:
+            self.config = ConfigManager()
+            self.session = SessionManager(
+                create_if_missing=not app.explicit_file_open
+            )
     
     def mark_saved(self):
         self.is_dirty = False

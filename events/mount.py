@@ -5,7 +5,6 @@ from pathlib import Path
 def handle(ctx):
     app = ctx.app
 
-    # 1) explicit CLI file always wins
     if app.explicit_file_open and ctx.current_path:
         path = Path(ctx.current_path).expanduser()
 
@@ -20,5 +19,4 @@ def handle(ctx):
         )
         return
 
-    # 2) otherwise restore session
     app.restore_session()

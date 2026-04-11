@@ -11,7 +11,6 @@ class StatusService:
 
     def set(self, text, delay=None, next_text=None, status_type="normal"):
         self._log(text, status_type)
-
         self.app.set_status(text, delay, next_text, status_type)
 
     ###==================== LOG SYSTEM ====================###

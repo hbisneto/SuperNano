@@ -1,5 +1,7 @@
 # ui/bindings.py
 
+CSS_FILE = "style.tcss"
+
 BINDINGS = [
     ("ctrl+b", "show_hide_sidebar", "Show/Hide Sidebar"),
     ("ctrl+n", "new_file", "New"),

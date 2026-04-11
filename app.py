@@ -38,7 +38,8 @@ from events import (
 )
 
 from services.app_context import AppContext
-from ui.bindings import BINDINGS, WELCOME
+from services.config_applier import ConfigApplier
+from ui.bindings import BINDINGS, CSS_FILE, WELCOME
 from ui.settings.screen import SettingsScreen
 from ui.layout import create_layout
 
@@ -57,7 +58,7 @@ def parse_args():
     return parser.parse_args()
 
 class SuperNanno(App):
-    CSS_PATH = "style.tcss"
+    CSS_PATH = CSS_FILE
     BINDINGS = BINDINGS
 
     def __init__(self, file_path: str | None = None):
@@ -68,9 +69,10 @@ class SuperNanno(App):
         self.confirm_action = None
         self._confirm_quit = False
         self._status_locked = False
+        self.explicit_file_open = bool(file_path)
         self.ctx = AppContext(self)
+        self.config_applier = ConfigApplier(self)
 
-        self.explicit_file_open = file_path is not None
 
         if file_path:
             self.ctx.current_path = Path(file_path)
@@ -86,7 +88,8 @@ class SuperNanno(App):
             self.editor, 
             self.status,
             self.search_container,
-            self.path_container) = create_layout()
+            self.path_container
+        ) = create_layout()
 
         self.editor.load_text(WELCOME)
 
@@ -130,6 +133,15 @@ class SuperNanno(App):
     def on_button_pressed(self, event):
         button_pressed.handle(self.ctx, event)
 
+    def on_config_reload(self):
+        self.config_applier.apply(self.ctx.config.data)
+
+        self.set_status(
+            "(Config Reloaded)",
+            delay=2,
+            status_type="info"
+        )
+
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected):
         directory_tree_selected.handle(self.ctx, event)
 
@@ -147,6 +159,12 @@ class SuperNanno(App):
         
     def on_mount(self):
         mount.handle(self.ctx)
+
+        if self.ctx.config.get("config_watcher", True):
+            self.run_worker(
+                self.__watch_config__(),
+                name="config_watcher"
+            )
     
     def on_text_area_changed(self, event):
         text_area_changed.handle(self.ctx)
@@ -172,8 +190,16 @@ class SuperNanno(App):
             self.status.update(next_text)
         else:
             self.status.update(self.get_default_status())
-        
         self._status_locked = False
+
+    async def __watch_config__(self):
+        while True:
+            interval = self.ctx.config.get("config_watcher_interval", 1)
+            changed = self.ctx.config.reload_rc_if_changed()
+
+            if changed:
+                self.on_config_reload()
+            await asyncio.sleep(interval)
 
     def detect_language_from_content(self):
         editor = self.get_editor()
@@ -257,23 +283,22 @@ class SuperNanno(App):
         self.status.update("Enter path to save file")
 
     def restore_session(self):
-        """Restore the last opened file using ConfigManager"""
-
         if self.explicit_file_open:
             return
-        
-        if not self.ctx.config.get("settings.startup.restore_last_session", True):
+
+        if not self.ctx.config:
             return
 
-        last_file = self.ctx.config.get("settings.session.last_opened_file", "")
+        if not self.ctx.config.get("restore_last_session", True):
+            return
+
+        last_file = self.ctx.session.get_last_file()
         if not last_file:
             return
 
-        path = Path(last_file).expanduser()
-        if path.exists() and path.is_file():
-            self._loading = True
+        path = Path(last_file)
+        if path.exists():
             self.load_file(str(path), silent=True)
-            self._loading = False
             self.ctx.status.set(
                 f"(Session Restored): {path.name}",
                 delay=3,
@@ -281,15 +306,18 @@ class SuperNanno(App):
                 status_type="info"
             )
 
-    def save_session_state(self, file_path: Path | None):
-        """Saves the last opened file path to the config for session restoration."""
-
+    def save_session_state(self, file_path):
         if self.explicit_file_open:
             return
-    
+
+        if not self.ctx.session:
+            return
+
         if not file_path:
             return
-        self.ctx.config.set("settings.session.last_opened_file", str(file_path))
+
+        self.ctx.session.set_last_file(str(file_path))
+        self.ctx.session.save()
             # Security: Recreate config.json with default values
             # self.set_status(f"(Save Session Error): {e}", delay=3, status_type="error")
 
@@ -365,4 +393,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # SuperNanno().run()

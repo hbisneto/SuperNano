@@ -9,7 +9,6 @@ def handle(ctx, event):
 
     value = event.value
     mode = ctx.app.input_mode
-
     handler = HANDLERS.get(mode, _handle_open)
     handler(ctx, event, value)
 
