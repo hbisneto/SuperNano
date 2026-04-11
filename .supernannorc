@@ -1,8 +1,12 @@
 # SuperNanno configuration
 
 set auto_backup false
+set auto_backup_location ~/Documents/SuperNanno/Backup
 set config_watcher true
 set config_watcher_interval 1
+set current_directory ~/
+set directory_tree_visibility true
+set directory_tree_width 35
 set restore_last_session true
 set tab_size 4
 set tab_behavior indent
