@@ -71,8 +71,6 @@ class SuperNanno(App):
         self._status_locked = False
         self.explicit_file_open = bool(file_path)
         self.ctx = AppContext(self)
-        self.config_applier = ConfigApplier(self)
-
         if file_path:
             self.ctx.current_path = Path(file_path)
 
@@ -133,7 +131,7 @@ class SuperNanno(App):
         button_pressed.handle(self.ctx, event)
 
     def on_config_reload(self):
-        self.config_applier.apply(self.ctx.config.data)
+        self.ctx.config_applier.apply(self.ctx.config.data)
 
         self.set_status(
             "(Config Reloaded)",
@@ -158,6 +156,8 @@ class SuperNanno(App):
         
     def on_mount(self):
         mount.handle(self.ctx)
+
+        self.ctx.config_applier.apply(self.ctx.config.data)
 
         if self.ctx.config.get("config_watcher", True):
             self.run_worker(
@@ -317,8 +317,6 @@ class SuperNanno(App):
 
         self.ctx.session.set_last_file(str(file_path))
         self.ctx.session.save()
-            # Security: Recreate config.json with default values
-            # self.set_status(f"(Save Session Error): {e}", delay=3, status_type="error")
 
     def set_language(self, path: Path):
         ext = path.suffix.lower()

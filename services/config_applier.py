@@ -1,8 +1,9 @@
 # services/config_applier.py
 
 class ConfigApplier:
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, ctx):
+        self.ctx = ctx
+        self.app = ctx.app
 
         self.handlers = {
             "auto_backup": self.apply_auto_backup,
@@ -19,7 +20,7 @@ class ConfigApplier:
     ###==================== HANDLERS ====================###
 
     def apply_auto_backup(self, value):
-        self.app.ctx.auto_backup_enabled = value
+        self.ctx.auto_backup_enabled = value
 
     def apply_tab_size(self, value):
         editor = self.app.get_editor()
@@ -33,9 +34,3 @@ class ConfigApplier:
 
     def apply_watcher_interval(self, value):
         self.app.config_watcher_interval = value
-
-# SuperNanno configuration
-
-# set tab_size 4
-# set tab_behavior indent
-# set indent_type spaces
