@@ -155,11 +155,10 @@ class SuperNanno(App):
         list_view_selected.handle(self.ctx, event)
         
     def on_mount(self):
+        self.ctx.config_applier.apply(self.ctx.config.data)
         mount.handle(self.ctx)
 
-        self.ctx.config_applier.apply(self.ctx.config.data)
-
-        if self.ctx.config.get("config_watcher", True):
+        if self.ctx.config_watcher:
             self.run_worker(
                 self.__watch_config__(),
                 name="config_watcher"
@@ -193,7 +192,7 @@ class SuperNanno(App):
 
     async def __watch_config__(self):
         while True:
-            interval = self.ctx.config.get("config_watcher_interval", 1)
+            interval = self.ctx.config_watcher_interval
             changed = self.ctx.config.reload_rc_if_changed()
 
             if changed:
@@ -288,7 +287,7 @@ class SuperNanno(App):
         if not self.ctx.config:
             return
 
-        if not self.ctx.config.get("restore_last_session", True):
+        if not self.ctx.restore_last_session:
             return
 
         last_file = self.ctx.session.get_last_file()

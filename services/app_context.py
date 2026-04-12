@@ -14,6 +14,9 @@ class AppContext:
         self.current_path: Path | None = None
         self.is_dirty = False
         self.state = None
+        self.config_watcher = True
+        self.config_watcher_interval = 1
+        self.restore_last_session = True
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)
