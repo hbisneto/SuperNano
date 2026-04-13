@@ -10,7 +10,7 @@ BINDINGS = [
     ("ctrl+r", "read_file", "Read File"),
     ("ctrl+f", "search", "Search"),
     ("ctrl+q", "quit", "Quit"),
-    ("f10", "show_settings", "Settings"),
+    ("f1", "show_settings", "Settings"),
 ]
 
 SETTINGS_BINDINGS = [
@@ -32,7 +32,7 @@ CTRL + S: Save File
 CTRL + R: Read file
 CTRL + F: Search Text
 CTRL + Q: Quit Editor
-F10: Settings
+F1: Settings
 
 Start typing to edit the document.
 """

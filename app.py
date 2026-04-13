@@ -1,8 +1,6 @@
 # app.py
 
-import argparse
 import asyncio
-import sys
 from pathlib import Path
 
 from pygments.lexers import guess_lexer
@@ -25,6 +23,8 @@ from commands import (
     toggle_sidebar
 )
 
+from cli.parser import parse_cli_args
+
 from events import (
     button_pressed,
     directory_tree_selected,
@@ -38,41 +38,26 @@ from events import (
 )
 
 from services.app_context import AppContext
-from services.config_applier import ConfigApplier
 from ui.bindings import BINDINGS, CSS_FILE, WELCOME
 from ui.settings.screen import SettingsScreen
 from ui.layout import create_layout
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        prog="supernanno",
-        description="Modern Nano-like terminal text editor"
-    )
-
-    parser.add_argument(
-        "file",
-        nargs="?",
-        help="File to open"
-    )
-
-    return parser.parse_args()
-
 class SuperNanno(App):
     CSS_PATH = CSS_FILE
     BINDINGS = BINDINGS
 
-    def __init__(self, file_path: str | None = None):
+    def __init__(self, cli_args=None):
         super().__init__()
+        self.cli_args = cli_args
         self.input_mode = None
         self.temp_file = None
         self._loading = False
         self.confirm_action = None
         self._confirm_quit = False
         self._status_locked = False
-        self.explicit_file_open = bool(file_path)
+        self.explicit_file_open = bool(cli_args and cli_args.file)
         self.ctx = AppContext(self)
-        if file_path:
-            self.ctx.current_path = Path(file_path)
+        if cli_args and cli_args.file:
+            self.ctx.current_path = Path(cli_args.file)
 
     def compose(self) -> ComposeResult:
         (header, 
@@ -262,6 +247,15 @@ class SuperNanno(App):
                     status_type="info"
                 )
 
+            if self.cli_args:
+                if self.cli_args.line:
+                    row = max(0, self.cli_args.line - 1)
+                    col = self.cli_args.column
+                    editor.cursor_location = (row, col)
+
+                elif self.cli_args.search:
+                    search.jump_to(self.ctx, self.cli_args.search)
+
         except Exception as e:
             self.ctx.status.error(
                 f"(Error loading file): {e}",
@@ -338,7 +332,7 @@ class SuperNanno(App):
 
         if not editor.language:
             try:
-                lexer = guess_lexer(editor.text)
+                lexer = guess_lexer(editor.text[:1000])  # Limit the text for performance
                 editor.language = lexer.aliases[0] if lexer.aliases else None
             except Exception:
                 editor.language = None
@@ -383,9 +377,10 @@ class SuperNanno(App):
                 self.__unlock_status_after__(delay, next_text),
                 name="status_unlock"
             )
+            
 def main():
-    args = parse_args()
-    SuperNanno(file_path=args.file).run()
+    cli_args = parse_cli_args()
+    SuperNanno(cli_args=cli_args).run()
 
 if __name__ == "__main__":
     main()
