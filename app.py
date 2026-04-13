@@ -37,6 +37,7 @@ from events import (
     unmount
 )
 
+from search.controller import SearchController
 from services.app_context import AppContext
 from ui.bindings import BINDINGS, CSS_FILE, WELCOME
 from ui.settings.screen import SettingsScreen
@@ -254,7 +255,7 @@ class SuperNanno(App):
                     editor.cursor_location = (row, col)
 
                 elif self.cli_args.search:
-                    search.jump_to(self.ctx, self.cli_args.search)
+                    SearchController().search(self.ctx, self.cli_args.search)
 
         except Exception as e:
             self.ctx.status.error(
@@ -377,7 +378,7 @@ class SuperNanno(App):
                 self.__unlock_status_after__(delay, next_text),
                 name="status_unlock"
             )
-            
+
 def main():
     cli_args = parse_cli_args()
     SuperNanno(cli_args=cli_args).run()
