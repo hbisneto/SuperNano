@@ -43,6 +43,25 @@ class SearchState:
 
     ###==================== INPUT EVENTS ====================###
 
+    def handle_enter(self, ctx):
+        focused = getattr(ctx.app, "focused", None)
+
+        if not focused:
+            return False
+
+        widget_id = getattr(focused, "id", "")
+
+        if widget_id == "replace_input":
+            self.replace_one(ctx)
+            return True
+
+        if widget_id == "search_input":
+            self.next_match(ctx)
+            return True
+
+        self.next_match(ctx)
+        return True
+
     def handle_input(self, ctx, event):
         if not hasattr(event, "input") or not hasattr(event, "value"):
             return
@@ -54,8 +73,7 @@ class SearchState:
             self._on_find_changed(ctx, value)
 
         elif input_id == "replace_input":
-            if isinstance(event, Input.Submitted):
-                self.replace_one(ctx, replace_text=value)
+            return
 
     def handle_key(self, ctx, event) -> bool:
         if event.key == "down":
@@ -91,7 +109,7 @@ class SearchState:
             replace_text = self._get_replace_text(ctx)
 
         if self.current_match_index < 0 or not self.matches:
-            ctx.status.set("Nenhuma ocorrência selecionada")
+            ctx.status.set("No results")
             return
 
         self._do_replace(ctx, replace_text)
@@ -101,7 +119,7 @@ class SearchState:
             replace_text = self._get_replace_text(ctx)
 
         if not self.matches or not self.current_term:
-            ctx.status.set("Nada para substituir")
+            ctx.status.set("No results")
             return
 
         editor = ctx.editor
@@ -172,11 +190,17 @@ class SearchState:
             maintain_selection_offset=False,
         )
 
-        old_index = self.current_match_index
         self._find_matches(ctx)
 
         if self.matches:
-            self.current_match_index = min(old_index, len(self.matches) - 1)
+            next_index = 0
+
+            for i, match_idx in enumerate(self.matches):
+                if match_idx > idx:
+                    next_index = i
+                    break
+
+            self.current_match_index = next_index
             self._go_to_match(ctx)
         else:
             self.current_match_index = -1

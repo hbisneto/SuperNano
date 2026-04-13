@@ -1,3 +1,5 @@
+# events/key.py
+
 def handle(ctx, event):
     state = ctx.state
 
@@ -7,9 +9,10 @@ def handle(ctx, event):
 
     if state:
         if event.key == "enter":
-            if hasattr(state, "next_match"):
-                state.next_match(ctx)
-                return
+            if hasattr(state, "handle_enter"):
+                handled = state.handle_enter(ctx)
+                if handled:
+                    return
         if event.key == "shift+enter":
             if hasattr(state, "prev_match"):
                 state.prev_match(ctx)
