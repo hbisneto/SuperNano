@@ -4,10 +4,18 @@ from cli.models import CLIArgs
 
 def parse_cli_args() -> CLIArgs:
     args = sys.argv[1:]
-
     result = CLIArgs()
 
     if not args:
+        return result
+
+    # GNU-style flags
+    if "--help" in args or "-h" in args:
+        result.help = True
+        return result
+
+    if "--version" in args or "-V" in args:
+        result.version = True
         return result
 
     first = args[0]

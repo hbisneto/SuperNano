@@ -7,16 +7,17 @@ class ConfigApplier:
         self.app = ctx.app
 
         self.handlers = {
-            "auto_backup": self.apply_auto_backup,
-            "config_watcher": self.apply_watcher,
-            "config_watcher_interval": self.apply_watcher_interval,
-            "current_directory": self.apply_current_directory,
-            "indent_type": self.apply_indent_type,
-            "restore_last_session": self.apply_restore_last_session,
-            "sidebar_visibility": self.apply_sidebar_visibility,
-            "sidebar_width": self.apply_sidebar_width,
-            "tab_behavior": self.apply_tab_behavior,
-            "tab_size": self.apply_tab_size,
+            "backup": self.apply_backup,
+            "backupdir": self.apply_backup_dir,
+            "configwatcher": self.apply_config_watcher,
+            "configwatcherinterval": self.apply_config_watcher_interval,
+            "indenttype": self.apply_indent_type,
+            "operatingdir": self.apply_operating_dir,
+            "restoresession": self.apply_restore_session,
+            "sidebar": self.apply_sidebar,
+            "sidebarwidth": self.apply_sidebar_width,
+            "tabbehavior": self.apply_tab_behavior,
+            "tabsize": self.apply_tab_size,
         }
 
     def apply(self, config):
@@ -26,10 +27,30 @@ class ConfigApplier:
 
     ###==================== HANDLERS ====================###
 
-    def apply_auto_backup(self, value):
-        self.ctx.auto_backup_enabled = value
+    def apply_backup(self, value):
+        self.ctx.backup_enabled = value
 
-    def apply_current_directory(self, value):
+    def apply_backup_dir(self, value):
+        if not value:
+            return
+
+        self.ctx.backup_dir = Path(value).expanduser().resolve()
+    
+    def apply_config_watcher(self, value):
+        self.ctx.config_watcher = value
+
+    def apply_config_watcher_interval(self, value):
+        try:
+            self.ctx.config_watcher_interval = max(1, int(value))
+        except (TypeError, ValueError):
+            self.ctx.config_watcher_interval = 1
+
+    def apply_indent_type(self, value):
+        editor = self.app.get_editor()
+        editor.indent_type = value
+        editor.refresh()
+    
+    def apply_operating_dir(self, value):
         if not value:
             return
 
@@ -58,15 +79,10 @@ class ConfigApplier:
                 status_type="warning"
             )
     
-    def apply_indent_type(self, value):
-        editor = self.app.get_editor()
-        editor.indent_type = value
-        editor.refresh()
-
-    def apply_restore_last_session(self, value):
+    def apply_restore_session(self, value):
         self.ctx.restore_last_session = bool(value)
 
-    def apply_sidebar_visibility(self, value):
+    def apply_sidebar(self, value):
         sidebar = self.app.sidebar
         sidebar.display = value
         sidebar.refresh()
@@ -89,12 +105,3 @@ class ConfigApplier:
         editor = self.app.get_editor()
         editor.indent_width = value
         editor.refresh()
-
-    def apply_watcher(self, value):
-        self.ctx.config_watcher = value
-
-    def apply_watcher_interval(self, value):
-        try:
-            self.ctx.config_watcher_interval = max(1, int(value))
-        except (TypeError, ValueError):
-            self.ctx.config_watcher_interval = 1

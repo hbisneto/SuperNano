@@ -10,3 +10,6 @@ class CLIArgs:
     column: int = 0
     search: str | None = None
     view_mode: bool = False
+
+    help: bool = False
+    version: bool = False

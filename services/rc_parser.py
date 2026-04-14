@@ -1,4 +1,20 @@
+# services/rc_parser.py
+
 from pathlib import Path
+
+def parse_value(raw: str):
+    raw = raw.strip()
+
+    if raw.isdigit():
+        return int(raw)
+
+    lowered = raw.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+
+    return raw
 
 def parse_rc_file(path: Path) -> dict:
     config = {}
@@ -6,33 +22,30 @@ def parse_rc_file(path: Path) -> dict:
     if not path.exists():
         return config
 
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
 
             if not line or line.startswith("#"):
                 continue
 
-            if line.startswith("set"):
-                parts = line.split(maxsplit=2)
+            parts = line.split(maxsplit=2)
+            command = parts[0].lower()
 
-                if len(parts) < 3:
-                    continue
+            if command == "set":
+                if len(parts) == 2:
+                    # boolean style: set backup
+                    key = parts[1].lower()
+                    config[key] = True
 
-                _, key, value = parts
-                value = convert_value(value)
-                config[key] = value
+                elif len(parts) == 3:
+                    key = parts[1].lower()
+                    value = parse_value(parts[2])
+                    config[key] = value
+
+            elif command == "unset":
+                if len(parts) == 2:
+                    key = parts[1].lower()
+                    config[key] = False
 
     return config
-
-
-def convert_value(value: str):
-    value = value.strip()
-
-    if value.lower() in ("true", "false"):
-        return value.lower() == "true"
-
-    if value.isdigit():
-        return int(value)
-
-    return value

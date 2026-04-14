@@ -9,13 +9,24 @@ from services.paths import(
 from services.rc_parser import parse_rc_file
 
 DEFAULT_CONFIG = {
-    "auto_backup": False,
-    "config_watcher": True,
-    "config_watcher_interval": 1,
-    "restore_last_session": True,
-    "tab_behavior": "indent",
-    "indent_type": "spaces",
-    "tab_size": 4
+    # Backups
+    "backup": False,
+    "backupdir": "",
+
+    # Live reload
+    "configwatcher": True,
+    "configwatcherinterval": 1,
+
+    # Editor
+    "indenttype": "spaces",
+    "tabbehavior": "indent",
+    "tabsize": 4,
+
+    # App
+    "operatingdir": "~/",
+    "restoresession": True,
+    "sidebar": True,
+    "sidebarwidth": 35,
 }
 
 class ConfigManager:

@@ -1,13 +1,13 @@
 # SuperNanno configuration
 
-set auto_backup false
-set auto_backup_location ~/Documents/SuperNanno/Backup
-set config_watcher true
-set config_watcher_interval 1
-set current_directory ~/
-set restore_last_session true
-set sidebar_visibility true
-set sidebar_width 35
-set tab_behavior indent
-set tab_size 4
-set indent_type spaces
+set backup true
+set backupdir ~/Documents/SuperNanno/Backup
+set configwatcher true
+set configwatcherinterval 1
+set indenttype spaces
+set operatingdir ~/
+set restoresession true
+set sidebar true
+set sidebarwidth 35
+set tabbehavior indent
+set tabsize 4

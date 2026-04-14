@@ -381,6 +381,15 @@ class SuperNanno(App):
 
 def main():
     cli_args = parse_cli_args()
+    if cli_args.help:
+        from cli.constants import HELP_TEXT
+        print(HELP_TEXT)
+        return
+
+    if cli_args.version:
+        from cli.constants import VERSION
+        print(VERSION)
+        return
     SuperNanno(cli_args=cli_args).run()
 
 if __name__ == "__main__":
