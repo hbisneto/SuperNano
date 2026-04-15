@@ -1,13 +1,13 @@
 # SuperNanno configuration
 
-set backup true
-set backupdir ~/Documents/SuperNanno/Backup
-set configwatcher true
+set backup
+set backupdir ~/.config/Bisneto/SuperNanno
+set configwatcher
 set configwatcherinterval 1
 set indenttype spaces
 set operatingdir ~/
-set restoresession true
-set sidebar true
+set restoresession
+set sidebar
 set sidebarwidth 35
 set tabbehavior indent
 set tabsize 4
