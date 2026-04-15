@@ -19,6 +19,9 @@ def get_base_dir() -> Path:
 def get_app_dir() -> Path:
     return get_base_dir() / APP_AUTHOR / APP_NAME
 
+def get_backups_dir() -> Path:
+    return get_app_dir() / "backups"
+
 def get_rc_file():
     return get_app_dir() / ".supernannorc"
 

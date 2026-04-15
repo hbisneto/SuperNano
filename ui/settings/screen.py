@@ -39,7 +39,7 @@ class SettingsScreen(Screen):
             Horizontal(
                 Checkbox(
                     "Restore last session on startup", 
-                    value=self.config.get("settings.startup.restore_last_session", True),
+                    value=self.config.get("settings.startup.restore_session", True),
                     id="restore_session"
                 ),
                 id="general_row"
@@ -87,7 +87,7 @@ class SettingsScreen(Screen):
 
     def action_save(self):
         """Salva as configurações"""
-        self.config.set("settings.startup.restore_last_session", 
+        self.config.set("settings.startup.restore_session", 
                        self.query_one("#restore_session", Checkbox).value)
 
         self.config.set("settings.session.auto_save", 

@@ -57,6 +57,16 @@ class SuperNanno(App):
         self._status_locked = False
         self.explicit_file_open = bool(cli_args and cli_args.file)
         self.ctx = AppContext(self)
+        if cli_args:
+            if cli_args.backup:
+                self.ctx.backup_enabled = True
+
+            if cli_args.backup_dir:
+                self.ctx.backup_dir = Path(cli_args.backup_dir).expanduser().resolve()
+
+        if cli_args and cli_args.view_mode:
+            self.ctx.read_only = True
+        
         if cli_args and cli_args.file:
             self.ctx.current_path = Path(cli_args.file)
 
@@ -202,6 +212,9 @@ class SuperNanno(App):
         dirty_flag = "*" if self.ctx.is_dirty else ""
         lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
         
+        if self.ctx.read_only:
+            return f"(READ ONLY): {self.ctx.current_path} | {lang} | UTF-8"
+        
         if self.ctx.current_path:
             return f"{self.ctx.current_path}{dirty_flag} | {lang} | UTF-8"
         return f"SuperNanno | {lang} | UTF-8"
@@ -230,6 +243,7 @@ class SuperNanno(App):
 
             self._loading = True
             editor.load_text(content)
+            self.editor.read_only = self.ctx.read_only
             self._loading = False
 
             self.ctx.editor_state.mark_saved(content)
@@ -282,7 +296,7 @@ class SuperNanno(App):
         if not self.ctx.config:
             return
 
-        if not self.ctx.restore_last_session:
+        if not self.ctx.restore_session:
             return
 
         last_file = self.ctx.session.get_last_file()

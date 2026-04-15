@@ -16,7 +16,10 @@ class AppContext:
         self.state = None
         self.config_watcher = True
         self.config_watcher_interval = 1
-        self.restore_last_session = True
+        self.restore_session = True
+        self.backup_enabled = False
+        self.backup_dir = None
+        self.read_only = False
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)

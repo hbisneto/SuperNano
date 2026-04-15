@@ -3,9 +3,21 @@
 from commands import save_as
 
 def execute(ctx):
+    if ctx.read_only:
+        ctx.status.warning(
+            "(Read Only): file opened in view mode",
+            delay=3
+        )
+        return
+    
     if ctx.current_path:
         try:
-            ctx.file_manager.write(ctx.current_path, ctx.editor.text)
+            ctx.file_manager.write(
+                ctx.current_path,
+                ctx.editor.text,
+                backup=ctx.backup_enabled,
+                backup_dir=ctx.backup_dir
+            )
 
             ctx.editor_state.mark_saved(ctx.editor.text)
             ctx.is_dirty = False

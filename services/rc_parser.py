@@ -1,6 +1,9 @@
 # services/rc_parser.py
-
 from pathlib import Path
+
+OPTIONAL_VALUE_KEYS = {
+    "backupdir",
+}
 
 def parse_value(raw: str):
     raw = raw.strip()
@@ -15,6 +18,7 @@ def parse_value(raw: str):
         return False
 
     return raw
+
 
 def parse_rc_file(path: Path) -> dict:
     config = {}
@@ -34,9 +38,12 @@ def parse_rc_file(path: Path) -> dict:
 
             if command == "set":
                 if len(parts) == 2:
-                    # boolean style: set backup
                     key = parts[1].lower()
-                    config[key] = True
+
+                    if key in OPTIONAL_VALUE_KEYS:
+                        config[key] = None
+                    else:
+                        config[key] = True
 
                 elif len(parts) == 3:
                     key = parts[1].lower()

@@ -70,14 +70,37 @@ def _handle_open(ctx, event, value):
         ctx.status.warning("Not a file or folder", delay=3)
 
 def _handle_save(ctx, event, value):
-    path = Path(value).expanduser()
+    if ctx.read_only:
+        ctx.status.warning(
+            "(Read Only): file opened in view mode",
+            delay=3,
+            status_type="warning",
+        )
+        return
+
+    path = Path(value).expanduser().resolve()
+
     try:
-        ctx.file_manager.write(path, ctx.editor.text)
+        ctx.file_manager.write(
+            path,
+            ctx.editor.text,
+            backup=ctx.backup_enabled,
+            backup_dir=ctx.backup_dir,
+        )
+
         ctx.current_path = path
         ctx.editor_state.mark_saved(ctx.editor.text)
         ctx.is_dirty = False
-        ctx.status.set(f"(Saved): {path.name}", delay=3, next_text=ctx.app.get_default_status(), status_type="success")
+
+        ctx.status.set(
+            f"(Saved): {path.name}",
+            delay=3,
+            next_text=ctx.app.get_default_status(),
+            status_type="success",
+        )
+
         ctx.app.directory_tree.reload()
+
     except Exception as e:
         ctx.status.error(f"(Error): {e}", delay=5)
 

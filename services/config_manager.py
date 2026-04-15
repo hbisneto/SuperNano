@@ -11,7 +11,7 @@ from services.rc_parser import parse_rc_file
 DEFAULT_CONFIG = {
     # Backups
     "backup": False,
-    "backupdir": "",
+    "backupdir": None,
 
     # Live reload
     "configwatcher": True,

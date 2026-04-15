@@ -1,5 +1,7 @@
 # services/config_applier.py
+
 from pathlib import Path
+from services.paths import get_backups_dir
 
 class ConfigApplier:
     def __init__(self, ctx):
@@ -31,11 +33,12 @@ class ConfigApplier:
         self.ctx.backup_enabled = value
 
     def apply_backup_dir(self, value):
-        if not value:
+        if not value or not str(value).strip():
+            self.ctx.backup_dir = get_backups_dir()
             return
 
         self.ctx.backup_dir = Path(value).expanduser().resolve()
-    
+
     def apply_config_watcher(self, value):
         self.ctx.config_watcher = value
 
@@ -80,7 +83,7 @@ class ConfigApplier:
             )
     
     def apply_restore_session(self, value):
-        self.ctx.restore_last_session = bool(value)
+        self.ctx.restore_session = bool(value)
 
     def apply_sidebar(self, value):
         sidebar = self.app.sidebar
