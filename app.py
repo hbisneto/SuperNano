@@ -208,16 +208,26 @@ class SuperNanno(App):
         editor.refresh()
 
     def get_default_status(self):
+        path = self.ctx.current_path
+        if path:
+            if self.ctx.path_display == "name":
+                path_str = path.name
+            else:
+                path_str = str(path)
+        else:
+            path_str = "SuperNanno"
+
         editor = self.get_editor()
         dirty_flag = "*" if self.ctx.is_dirty else ""
         lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
         
         if self.ctx.read_only:
-            return f"(READ ONLY): {self.ctx.current_path} | {lang} | UTF-8"
-        
-        if self.ctx.current_path:
-            return f"{self.ctx.current_path}{dirty_flag} | {lang} | UTF-8"
-        return f"SuperNanno | {lang} | UTF-8"
+            return f"(READ ONLY): {path_str} | {lang} | UTF-8"
+            
+        if path:
+            return f"{path_str}{dirty_flag} | {lang} | UTF-8"
+
+        return f"{path_str} | {lang} | UTF-8"
 
     def get_editor(self):
         return self.query_one("#editor", TextArea)
@@ -239,15 +249,14 @@ class SuperNanno(App):
             content = self.ctx.file_manager.read(path)
             editor = self.get_editor()
 
-            self.set_language(path)
-
+            self.ctx.current_path = path
             self._loading = True
             editor.load_text(content)
+            self.set_language(path)
             self.editor.read_only = self.ctx.read_only
             self._loading = False
 
             self.ctx.editor_state.mark_saved(content)
-            self.ctx.current_path = path
             self.ctx.is_dirty = False
 
             self.save_session_state(path)
@@ -274,8 +283,7 @@ class SuperNanno(App):
         except Exception as e:
             self.ctx.status.error(
                 f"(Error loading file): {e}",
-                delay=5,
-                status_type="error"
+                delay=5
             )
 
     def prompt_save_as(self):
@@ -329,26 +337,35 @@ class SuperNanno(App):
     def set_language(self, path: Path):
         ext = path.suffix.lower()
         language_map = {
-            ".py": "python",
-            ".js": "javascript",
-            ".ts": "typescript",
-            ".cs": "csharp",
-            ".json": "json",
-            ".html": "html",
-            ".css": "css",
-            ".md": "markdown",
-            ".sh": "bash",
             ".c": "c",
-            ".cpp": "cpp"
+            ".cpp": "cpp",
+            ".cs": "csharp",
+            ".css": "css",
+            ".html": "html",
+            ".js": "javascript",
+            ".json": "json",
+            ".md": "markdown",
+            ".py": "python",
+            ".sh": "bash",
+            ".ts": "typescript",
         }
 
         editor = self.get_editor()
-        editor.language = language_map.get(ext)
+        lang = language_map.get(ext)
+
+        try:
+            editor.language = lang
+        except Exception:
+            editor.language = None
 
         if not editor.language:
             try:
-                lexer = guess_lexer(editor.text[:1000])  # Limit the text for performance
-                editor.language = lexer.aliases[0] if lexer.aliases else None
+                lexer = guess_lexer(editor.text[:1000])
+                alias = lexer.aliases[0] if lexer.aliases else None
+                try:
+                    editor.language = alias
+                except Exception:
+                    editor.language = None
             except Exception:
                 editor.language = None
 

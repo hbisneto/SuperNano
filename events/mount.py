@@ -12,6 +12,7 @@ def handle(ctx):
             app.load_file(str(path), silent=True)
             return
 
+        ctx.current_path = None
         ctx.status.warning(
             f"(Startup): File not found: {path}",
             delay=3,

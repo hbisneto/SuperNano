@@ -1,11 +1,12 @@
 # SuperNanno configuration
 
 set backup
-set backupdir ~/.config/Bisneto/SuperNanno
+set backupdir ~/.config/Bisneto/SuperNanno/Backup
 set configwatcher
 set configwatcherinterval 1
 set indenttype spaces
 set operatingdir ~/
+set pathdisplay full
 set restoresession
 set sidebar
 set sidebarwidth 35

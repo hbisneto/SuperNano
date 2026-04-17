@@ -27,6 +27,7 @@ DEFAULT_CONFIG = {
     "restoresession": True,
     "sidebar": True,
     "sidebarwidth": 35,
+    "pathdisplay": "full",
 }
 
 class ConfigManager:

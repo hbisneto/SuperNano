@@ -15,6 +15,7 @@ class ConfigApplier:
             "configwatcherinterval": self.apply_config_watcher_interval,
             "indenttype": self.apply_indent_type,
             "operatingdir": self.apply_operating_dir,
+            "pathdisplay": self.apply_path_display,
             "restoresession": self.apply_restore_session,
             "sidebar": self.apply_sidebar,
             "sidebarwidth": self.apply_sidebar_width,
@@ -82,6 +83,13 @@ class ConfigApplier:
                 status_type="warning"
             )
     
+    def apply_path_display(self, value):
+        allowed = {"full", "name"}
+        if value not in allowed:
+            return
+
+        self.ctx.path_display = value
+
     def apply_restore_session(self, value):
         self.ctx.restore_session = bool(value)
 

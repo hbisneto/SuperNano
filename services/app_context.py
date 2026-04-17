@@ -20,6 +20,7 @@ class AppContext:
         self.backup_enabled = False
         self.backup_dir = None
         self.read_only = False
+        self.path_display = "full"
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(app, debug=True)
