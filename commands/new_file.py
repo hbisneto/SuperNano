@@ -13,4 +13,4 @@ def execute(ctx):
     ctx.is_dirty = False
     ctx.editor_state.mark_saved("")
 
-    ctx.status.info("New file (unsaved)")
+    ctx.status.persist("(New file): Untitled")

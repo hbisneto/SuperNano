@@ -54,7 +54,6 @@ class SuperNanno(App):
         self._loading = False
         self.confirm_action = None
         self._confirm_quit = False
-        self._status_locked = False
         self.explicit_file_open = bool(cli_args and cli_args.file)
         self.ctx = AppContext(self)
         if cli_args:
@@ -128,12 +127,7 @@ class SuperNanno(App):
 
     def on_config_reload(self):
         self.ctx.config_applier.apply(self.ctx.config.data)
-
-        self.set_status(
-            "(Config Reloaded)",
-            delay=2,
-            status_type="info"
-        )
+        self.ctx.status.info("(Config Reloaded)")
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected):
         directory_tree_selected.handle(self.ctx, event)
@@ -168,24 +162,6 @@ class SuperNanno(App):
 
     ###==================== ON EVENT ====================###
 
-    async def __delayed_status__(self, delay, text):
-        await asyncio.sleep(delay)
-        self.status.update(text)
-
-    async def __unlock_status_after__(self, delay, next_text):
-        await asyncio.sleep(delay)
-        
-        self.status.remove_class("success")
-        self.status.remove_class("info")
-        self.status.remove_class("warning")
-        self.status.remove_class("error")
-
-        if next_text:
-            self.status.update(next_text)
-        else:
-            self.status.update(self.get_default_status())
-        self._status_locked = False
-
     async def __watch_config__(self):
         while True:
             interval = self.ctx.config_watcher_interval
@@ -196,7 +172,7 @@ class SuperNanno(App):
             await asyncio.sleep(interval)
 
     def detect_language_from_content(self):
-        editor = self.get_editor()
+        editor = self.ctx.editor
         try:
             lexer = guess_lexer(editor.text)
             if lexer.aliases:
@@ -217,7 +193,7 @@ class SuperNanno(App):
         else:
             path_str = "SuperNanno"
 
-        editor = self.get_editor()
+        editor = self.ctx.editor
         dirty_flag = "*" if self.ctx.is_dirty else ""
         lang = "text" if (lang := getattr(editor, "language", None)) is None else lang
         
@@ -229,25 +205,17 @@ class SuperNanno(App):
 
         return f"{path_str} | {lang} | UTF-8"
 
-    def get_editor(self):
-        return self.query_one("#editor", TextArea)
-
     def load_file(self, path_str, silent=False):
         """Load a file and update the editor content, language, and status."""
         try:
             path = Path(path_str)
 
             if path.is_dir():
-                self.ctx.status.set(
-                    "(File Operation): Cannot open a directory\n >> Choose a file to open it",
-                    delay=3,
-                    next_text=self.get_default_status(),
-                    status_type="warning"
-                )
+                self.ctx.status.warning("(File Operation): Cannot open a directory\n >> Choose a file to open it")
                 return
 
             content = self.ctx.file_manager.read(path)
-            editor = self.get_editor()
+            editor = self.ctx.editor
 
             self.ctx.current_path = path
             self._loading = True
@@ -264,12 +232,7 @@ class SuperNanno(App):
             editor.focus()
 
             if not silent:
-                self.ctx.status.set(
-                    f"Opened: {path.name}",
-                    delay=2,
-                    next_text=self.get_default_status(),
-                    status_type="info"
-                )
+                self.ctx.status.info(f"(Opened): {path.name}")
 
             if self.cli_args:
                 if self.cli_args.line:
@@ -281,10 +244,7 @@ class SuperNanno(App):
                     SearchController().search(self.ctx, self.cli_args.search)
 
         except Exception as e:
-            self.ctx.status.error(
-                f"(Error loading file): {e}",
-                delay=5
-            )
+            self.ctx.status.error(f"(Error loading file): {e}")
 
     def prompt_save_as(self):
         path_container = self.query_one("#path_container")
@@ -295,7 +255,7 @@ class SuperNanno(App):
         input_widget.value = "./"
         input_widget.focus()
         self.input_mode = "save"
-        self.status.update("Enter path to save file")
+        self.ctx.status.persist("Enter path to save file")
 
     def restore_session(self):
         if self.explicit_file_open:
@@ -314,12 +274,7 @@ class SuperNanno(App):
         path = Path(last_file)
         if path.exists():
             self.load_file(str(path), silent=True)
-            self.ctx.status.set(
-                f"(Session Restored): {path.name}",
-                delay=3,
-                next_text=self.get_default_status(),
-                status_type="info"
-            )
+            self.ctx.status.info(f"(Session Restored): {path.name}")
 
     def save_session_state(self, file_path):
         if self.explicit_file_open:
@@ -350,7 +305,7 @@ class SuperNanno(App):
             ".ts": "typescript",
         }
 
-        editor = self.get_editor()
+        editor = self.ctx.editor
         lang = language_map.get(ext)
 
         try:
@@ -379,36 +334,6 @@ class SuperNanno(App):
 
         if state:
             state.on_enter(self.ctx)
-
-    def set_status(self, text, delay=None, next_text=None, status_type="normal"):
-        """Update the status bar in a safe manner."""
-        self._status_locked = True
-
-        self.status.remove_class("success")
-        self.status.remove_class("info")
-        self.status.remove_class("warning")
-        self.status.remove_class("error")
-
-        if status_type == "success":
-            self.status.add_class("success")
-        elif status_type == "info":
-            self.status.add_class("info")
-        elif status_type == "warning":
-            self.status.add_class("warning")
-        elif status_type == "error":
-            self.status.add_class("error")
-
-        self.status.update(text)
-
-        if hasattr(self, "_status_task") and self._status_task:
-            self._status_task.cancel()
-
-        if delay is not None:
-            next_text = next_text or self.get_default_status()
-            self._status_task = self.run_worker(
-                self.__unlock_status_after__(delay, next_text),
-                name="status_unlock"
-            )
 
 def main():
     cli_args = parse_cli_args()

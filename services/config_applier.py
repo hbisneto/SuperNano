@@ -50,7 +50,7 @@ class ConfigApplier:
             self.ctx.config_watcher_interval = 1
 
     def apply_indent_type(self, value):
-        editor = self.app.get_editor()
+        editor = self.ctx.editor
         editor.indent_type = value
         editor.refresh()
     
@@ -108,11 +108,11 @@ class ConfigApplier:
         self.app.sidebar.refresh()
 
     def apply_tab_behavior(self, value):
-        editor = self.app.get_editor()
+        editor = self.ctx.editor
         editor.tab_behavior = value
         editor.refresh()
 
     def apply_tab_size(self, value):
-        editor = self.app.get_editor()
+        editor = self.ctx.editor
         editor.indent_width = value
         editor.refresh()

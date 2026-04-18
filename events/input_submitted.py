@@ -122,3 +122,4 @@ def _finalize(ctx, event):
         ctx.app.search_container.display = False
 
     ctx.editor.focus()
+    ctx.status.release()

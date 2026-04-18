@@ -8,6 +8,10 @@ class SearchController:
         self.engine = SearchEngine()
 
     def search(self, ctx, term: str) -> SearchResult:
+        if not term.strip():
+            ctx.status.set("Empty search")
+            return SearchResult()
+        
         result = self.find(ctx.editor.text, term)
 
         if not result.has_matches:

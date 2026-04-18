@@ -11,3 +11,5 @@ def execute(ctx):
     input_widget.focus()
 
     ctx.app.input_mode = "read_file"
+
+    ctx.status.persist("(Read file): Enter path to read a file")

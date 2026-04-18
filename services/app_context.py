@@ -23,7 +23,7 @@ class AppContext:
         self.path_display = "full"
         self.editor_state = EditorState()
         self.file_manager = FileManager()
-        self.status = StatusService(app, debug=True)
+        self.status = StatusService(self, debug=True)
         self.config = ConfigManager()
         self.session = SessionManager(
             create_if_missing=not app.explicit_file_open
@@ -35,4 +35,4 @@ class AppContext:
         
     @property
     def editor(self):
-        return self.app.get_editor()
+        return self.app.editor
