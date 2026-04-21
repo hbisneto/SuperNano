@@ -1,4 +1,5 @@
 # services/rc_parser.py
+
 from pathlib import Path
 
 OPTIONAL_VALUE_KEYS = {
@@ -18,7 +19,6 @@ def parse_value(raw: str):
         return False
 
     return raw
-
 
 def parse_rc_file(path: Path) -> dict:
     config = {}

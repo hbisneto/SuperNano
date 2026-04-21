@@ -98,32 +98,8 @@ class StatusService:
     # ==================== DEFAULT ==================== #
 
     def get_default(self):
-        editor = self.ctx.editor
-
-        path = self.ctx.current_path
-        if path:
-            if self.ctx.path_display == "name":
-                path_str = path.name
-            else:
-                path_str = str(path)
-        else:
-            path_str = "SuperNanno"
-
-        dirty = "*" if self.ctx.is_dirty else ""
-
-        lang = getattr(editor, "language", None) or "text"
-
-        try:
-            row, col = editor.cursor_location
-            row += 1
-            col += 1
-        except Exception:
-            row, col = 1, 1
-
-        if self.ctx.read_only:
-            return f"(READ ONLY) {path_str}{dirty} | {lang} | Ln {row}, Col {col}"
-
-        return f"{path_str}{dirty} | {lang} | Ln {row}, Col {col}"
+        """DELEGADO para o AppContext (nova fonte única de verdade)"""
+        return self.ctx.get_default_status()
 
     # ==================== LOG ==================== #
 

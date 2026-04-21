@@ -19,17 +19,19 @@ def handle(ctx, event):
                 return
 
     if event.key == "escape":
+        ctx.clear_pending_action()
         if ctx.state:
-            ctx.app.set_state(None)
+            ctx.set_state(None)
             return
 
-        if getattr(ctx.app, 'path_container', None) and ctx.app.path_container.display:
-            ctx.app.path_container.display = False
-            ctx.app.editor.focus()
-            return
-        if getattr(ctx.app, 'search_container', None) and ctx.app.search_container.display:
-            ctx.app.search_container.display = False
-            ctx.app.editor.focus()
+        if ctx.path_container and ctx.path_container.display:
+            ctx.path_container.display = False
+            ctx.editor.focus()
             return
 
-        ctx.app.status.update(ctx.app.get_default_status())
+        if ctx.search_container and ctx.search_container.display:
+            ctx.search_container.display = False
+            ctx.editor.focus()
+            return
+
+    ctx.status.default()

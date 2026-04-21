@@ -15,3 +15,5 @@ class CLIArgs:
 
     help: bool = False
     version: bool = False
+
+    invalid_arg: str | None = None

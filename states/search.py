@@ -20,6 +20,7 @@ class SearchState:
     def on_enter(self, ctx):
         ctx.app.search_container.display = True
         ctx.app.search_bar.show()
+        ctx.app.search_bar.search_input.focus()
         ctx.app.search_bar.hide_replace()
 
         editor = ctx.editor
@@ -39,7 +40,7 @@ class SearchState:
         ctx.app.search_container.display = False
         ctx.app.search_bar.hide()
         ctx.app.editor.focus()
-        ctx.status.set(ctx.app.get_default_status())
+        ctx.status.set(ctx.get_default_status())
 
     ###==================== INPUT EVENTS ====================###
 
@@ -138,10 +139,26 @@ class SearchState:
         ctx.status.set(
             f"Replaced {count}x '{self.current_term}' → '{replace_text}'",
             delay=3,
-            next_text=ctx.app.get_default_status()
+            next_text=ctx.get_default_status()
         )
 
     ###==================== PRIVATE ====================###
+
+    def _apply_match(self, ctx, index: int):
+        if not self.matches:
+            return
+
+        idx = self.matches[index]
+        term = self.current_term
+        editor = ctx.editor
+
+        start = editor.document.get_location_from_index(idx)
+        end = editor.document.get_location_from_index(idx + len(term))
+
+        editor.cursor_location = start
+        editor.selection = (start, end)
+
+        ctx.status.set(f"Match {index + 1}/{len(self.matches)}: '{term}'")
 
     def _on_find_changed(self, ctx, value: str):
         new_term = value.strip()
@@ -154,19 +171,31 @@ class SearchState:
         self._go_to_match(ctx)
 
     def _find_matches(self, ctx):
-        self.result = self.controller.find(ctx.editor.text, self.current_term)
+        if not self.current_term.strip():
+            ctx.status.set("Empty search")
+            self.result = None
+            return
+
+        # [PLUGIN]: BEFORE HOOK
+        ctx.execute_hook("before_search", self.current_term)
+
+        self.result = self.controller.search(
+            ctx.editor.text,
+            self.current_term
+        )
+
+        # [PLUGIN]: AFTER HOOK
+        ctx.execute_hook("after_search", self.result)
+
+        if not self.result or not self.result.has_matches:
+            ctx.status.set(f"Not Found: '{self.current_term}'")
 
     def _go_to_match(self, ctx):
         if not self.matches:
             ctx.status.set(f"Not Found: '{self.current_term}'")
             return
-
-        self.controller.go_to_match(
-            ctx,
-            self.result,
-            self.current_match_index,
-            self.current_term,
-        )
+        
+        self._apply_match(ctx, self.current_match_index)
 
     def _do_replace(self, ctx, replace_text: str):
         if (

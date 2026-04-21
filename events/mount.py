@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from events import cursor_watcher
+from handlers import load
+
 
 def handle(ctx):
     app = ctx.app
@@ -10,19 +12,24 @@ def handle(ctx):
         app._cursor_watcher_running = True
         app.run_worker(cursor_watcher.watch(ctx), name="cursor_watcher")
 
-    if app.explicit_file_open and ctx.current_path:
+    if ctx.app.explicit_file_open and ctx.current_path:
         path = Path(ctx.current_path).expanduser()
 
         if path.exists() and path.is_file():
-            app.load_file(str(path), silent=True)
+            load(ctx, str(path), silent=True)
             return
 
         ctx.current_path = None
         ctx.status.warning(
-            f"(Startup): File not found: {path}",
-            delay=3,
-            next_text=app.get_default_status()
+            f"(Startup): File not found: {path}"
         )
         return
 
-    app.restore_session()
+    if not ctx.app.explicit_file_open and ctx.restore_session:
+        last_file = ctx.session.get_last_file()
+        if last_file:
+            path = Path(last_file)
+            if path.exists() and path.is_file():
+                load(ctx, str(path), silent=True)
+                ctx.status.info(f"(Session Restored): {path.name}")
+

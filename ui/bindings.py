@@ -36,3 +36,5 @@ F1: Settings
 
 Start typing to edit the document.
 """
+
+IS_WELCOME_TEXT = WELCOME.strip()

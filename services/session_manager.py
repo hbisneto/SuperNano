@@ -1,3 +1,5 @@
+# services/session_manager.py
+
 import json
 from services.paths import get_config_dir
 
