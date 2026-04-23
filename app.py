@@ -1,21 +1,10 @@
 # app.py
 
 import asyncio
-from pathlib import Path
 import sys
-
-from textual.app import App, ComposeResult
-from textual.containers import Horizontal
-from textual.widgets import (
-    DirectoryTree,
-    ListView,
-    Input
-)
-
 from cli.constants import HELP_TEXT
 from cli.constants import VERSION
 from cli.parser import parse_cli_args
-
 from events import (
     button_pressed,
     directory_tree_selected,
@@ -27,19 +16,24 @@ from events import (
     text_area_changed,
     unmount,
 )
-
 from handlers import (
     new,
     open_file,
-    load,
     read,
     save,
-    save_as,
+    toggle_sidebar,
     quit,
 )
-
-from states.search import SearchState
+from pathlib import Path
 from services.app_context import AppContext
+from states.search import SearchState
+from textual.app import App, ComposeResult
+from textual.containers import Horizontal
+from textual.widgets import (
+    Input,
+    DirectoryTree,
+    ListView
+)
 from ui.bindings import (
     BINDINGS, 
     CSS_FILE,
@@ -49,8 +43,8 @@ from ui.layout import create_layout
 from ui.settings.screen import SettingsScreen
 
 class SuperNanno(App):
-    CSS_PATH = CSS_FILE
     BINDINGS = BINDINGS
+    CSS_PATH = CSS_FILE
 
     def __init__(self, cli_args=None):
         super().__init__()
@@ -58,6 +52,7 @@ class SuperNanno(App):
         self.input_mode = None
         self._loading = False
         self._confirm_quit = False
+        self.welcome_text = WELCOME
         self.explicit_file_open = bool(cli_args and cli_args.file)
         self.ctx = AppContext(self)
 
@@ -82,11 +77,10 @@ class SuperNanno(App):
             self.editor, 
             self.status,
             self.search_container,
-            self.path_container
+            self.path_container,
+            self.startup_view
         ) = create_layout()
-
-        self.editor.load_text(WELCOME)
-        self.ctx.mark_clean()
+        self.in_startup = True
 
         yield header
         yield Horizontal(self.sidebar, main_content)
@@ -113,8 +107,7 @@ class SuperNanno(App):
         self.ctx.set_state(SearchState())
 
     def action_show_hide_sidebar(self):
-        from commands.toggle_sidebar import execute as toggle_execute
-        toggle_execute(self.ctx)
+        toggle_sidebar(self.ctx)
 
     def action_show_settings(self):
         self.push_screen(SettingsScreen())
@@ -142,6 +135,7 @@ class SuperNanno(App):
     def on_mount(self):
         self.ctx.config_applier.apply(self.ctx.config.data)
         mount.handle(self.ctx)
+        self.apply_startup_policy()
         self.ctx.status.default()
 
         if self.ctx.config_watcher:
@@ -153,6 +147,12 @@ class SuperNanno(App):
     def on_unmount(self):
         unmount.handle(self.ctx)
 
+    def on_config_reload(self):
+        self.ctx.config_applier.apply(self.ctx.config.data)
+        self.ctx.status.info("(Config Reloaded)")
+
+    # ==================== AUX METHODS ====================
+
     async def __watch_config__(self):
         while True:
             changed = self.ctx.config.reload_rc_if_changed()
@@ -160,11 +160,11 @@ class SuperNanno(App):
                 self.on_config_reload()
             await asyncio.sleep(self.ctx.config_watcher_interval)
 
-    def on_config_reload(self):
-        self.ctx.config_applier.apply(self.ctx.config.data)
-        self.ctx.status.info("(Config Reloaded)")
-
-    # ==================== MÉTODOS AUXILIARES ====================
+    def apply_startup_policy(self):
+        if self.ctx.restore_session and self.ctx.editor.text.strip():
+            self.in_startup = False
+            self.startup_view.display = False
+            self.editor.display = True
 
     def prompt_save_as(self):
         if self.path_container:

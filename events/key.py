@@ -2,6 +2,18 @@
 
 def handle(ctx, event):
     state = ctx.state
+    
+    if ctx.app.in_startup:
+        ctx.app.startup_view.display = False
+        ctx.app.editor.display = True
+
+        if not ctx.editor.text.strip():
+            ctx.editor.load_text(ctx.app.welcome_text)
+            ctx.mark_clean()
+
+        ctx.app.editor.focus()
+        ctx.app.in_startup = False
+        return
 
     if state and hasattr(state, "handle_key"):
         if state.handle_key(ctx, event):
@@ -26,12 +38,9 @@ def handle(ctx, event):
 
         if ctx.path_container and ctx.path_container.display:
             ctx.path_container.display = False
+            ctx.app.input_mode = None
             ctx.editor.focus()
-            return
-
-        if ctx.search_container and ctx.search_container.display:
-            ctx.search_container.display = False
-            ctx.editor.focus()
+            ctx.status.release()
             return
 
     ctx.status.default()

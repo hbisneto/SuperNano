@@ -1,5 +1,6 @@
 # ui/layout.py
 
+from .search_bar import SearchBar
 from textual.containers import Vertical
 from textual.widgets import (
     DirectoryTree,
@@ -9,8 +10,8 @@ from textual.widgets import (
     Footer, 
     Header
 )
-
-from .search_bar import SearchBar
+from ui.startup_view import StartupView
+from ui.bindings import WELCOME
 
 def create_layout() -> tuple:
     directory_tree = DirectoryTree(path=".", id="directory_tree")
@@ -31,11 +32,15 @@ def create_layout() -> tuple:
     path_container = Vertical(path_input, id="path_container")
     path_container.display = False
 
+    startup_view = StartupView(WELCOME)
+
     editor = TextArea.code_editor("", id="editor", language="markdown")
+    editor.display = False
     status = Static("SuperNanno Ready", id="status")
     
 
     main_content = Vertical(
+        startup_view,
         editor,
         search_container,
         path_container,
@@ -57,5 +62,6 @@ def create_layout() -> tuple:
         editor,
         status,
         search_container,
-        path_container
+        path_container,
+        startup_view
     )

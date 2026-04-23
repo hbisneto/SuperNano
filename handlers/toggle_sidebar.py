@@ -1,4 +1,4 @@
-# commands/toggle_sidebar.py
+# handlers/toggle_sidebar.py
 
 def execute(ctx):
     sidebar = ctx.app.sidebar

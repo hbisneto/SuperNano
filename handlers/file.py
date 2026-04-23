@@ -92,8 +92,26 @@ def load(ctx, path_str: str, silent: bool = False):
         return
     do_load()
 
-def read(ctx, value: str):
+def read(ctx, value: str | None = None):
+    if value is None:
+        input_w = ctx.app.query_one("#path_input", Input)
+        input_w.display = True
+        input_w.value = ""
+        input_w.placeholder = "Read file into editor..."
+        input_w.focus()
+
+        ctx.app.input_mode = "read_file"
+
+        if ctx.path_container:
+            ctx.path_container.display = True
+
+        ctx.status.persist("(Read): Enter file path to insert")
+        return
+    _do_read(ctx, value)
+
+def _do_read(ctx, value: str):
     path = Path(value).expanduser()
+
     if not path.exists() or path.is_dir():
         ctx.status.warning(f"Cannot read: {path}", delay=3)
         return
@@ -107,8 +125,10 @@ def read(ctx, value: str):
             start, end = editor.selection
             start_i = editor.document.get_index_from_location(start)
             end_i = editor.document.get_index_from_location(end)
+
             if start_i > end_i:
                 start_i, end_i = end_i, start_i
+
             new_text = text[:start_i] + content + text[end_i:]
             new_index = start_i + len(content)
         else:
@@ -117,11 +137,12 @@ def read(ctx, value: str):
             new_index = index + len(content)
 
         editor.text = new_text
-        editor.cursor_location = editor.document.get_index_from_location(new_index)
+        editor.cursor_location = editor.document.get_location_from_index(new_index)
+
         ctx.status.success(f"(Inserted): {path.name}", delay=3)
 
     except Exception as e:
-        ctx.status.error(f"Error inserting file: {e}", delay=3)
+        ctx.status.error(f"Error inserting file: {e}")
 
 def save(ctx):
     if ctx.read_only:
