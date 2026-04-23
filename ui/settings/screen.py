@@ -20,8 +20,6 @@ from services.config_manager import ConfigManager
 from ui.bindings import SETTINGS_BINDINGS
 
 class SettingsScreen(Screen):
-    """Tela de configurações acessível via CTRL + ,"""
-
     BINDINGS = SETTINGS_BINDINGS
 
     def __init__(self):
@@ -39,7 +37,7 @@ class SettingsScreen(Screen):
             Horizontal(
                 Checkbox(
                     "Restore last session on startup", 
-                    value=self.config.get("settings.startup.restore_last_session", True),
+                    value=self.config.get("settings.startup.restore_session", True),
                     id="restore_session"
                 ),
                 id="general_row"
@@ -86,8 +84,7 @@ class SettingsScreen(Screen):
             self.dismiss()
 
     def action_save(self):
-        """Salva as configurações"""
-        self.config.set("settings.startup.restore_last_session", 
+        self.config.set("settings.startup.restore_session", 
                        self.query_one("#restore_session", Checkbox).value)
 
         self.config.set("settings.session.auto_save", 

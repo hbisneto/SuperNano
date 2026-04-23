@@ -1,92 +1,89 @@
 # services/config_manager.py
 
-from pathlib import Path
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+from services.paths import(
+    get_config_dir, 
+    get_rc_file
+)
+from services.rc_parser import parse_rc_file
+
+DEFAULT_CONFIG = {
+    # Backups
+    "backup": False,
+    "backupdir": None,
+
+    # Live reload
+    "configwatcher": True,
+    "configwatcherinterval": 1,
+
+    # Editor
+    "indenttype": "spaces",
+    "tabbehavior": "indent",
+    "tabsize": 4,
+
+    # App
+    "operatingdir": "~/",
+    "restoresession": True,
+    "sidebar": True,
+    "sidebarwidth": 35,
+    "pathdisplay": "full",
+}
 
 class ConfigManager:
-    def __init__(self, config_path: str = "config.json"):
-        self.config_path = Path(config_path)
-        self._config: Dict = {}
-        self.load()
+    def __init__(self):
+        self.config_path = get_config_dir() / "config.json"
+        self.data = DEFAULT_CONFIG.copy()
+        self.rc_path = get_rc_file()
+        self._rc_mtime = None
 
-    def load(self) -> bool:
-        """Carrega o config.json ou cria um default se não existir."""
         if self.config_path.exists():
-            try:
-                with open(self.config_path, "r", encoding="utf-8") as f:
-                    self._config = json.load(f)
-                return True
-            except Exception:
-                self._config = self._get_default_config()
-                self.save()
-                return False
-        else:
-            self._config = self._get_default_config()
-            self.save()
-            return True
+            self._load()
 
-    def save(self) -> bool:
-        """Salva o config atual no arquivo."""
+        rc_config = parse_rc_file(get_rc_file())
+        self.data.update(rc_config)
+
+    def _load(self):
         try:
-            with open(self.config_path, "w", encoding="utf-8") as f:
-                json.dump(self._config, f, indent=4, ensure_ascii=False)
-            return True
+            with open(self.config_path, "r") as f:
+                self.data.update(json.load(f))
         except Exception:
-            return False
+            pass
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Pega um valor usando notação de ponto (ex: 'session.last_opened_file')"""
-        keys = key.split('.')
-        data = self._config
-        for k in keys:
-            if isinstance(data, dict):
-                data = data.get(k, default)
-            else:
-                return default
-        return data if data is not None else default
+        return self.data.get(key, default)
+    
+    def reload_rc_if_changed(self):
+        if not self.rc_path.exists():
+            return False
 
-    def set(self, key: str, value: Any) -> bool:
-        """Define um valor usando notação de ponto"""
-        keys = key.split('.')
-        data = self._config
-        for i, k in enumerate(keys[:-1]):
-            if k not in data or not isinstance(data[k], dict):
-                data[k] = {}
-            data = data[k]
-        data[keys[-1]] = value
-        return self.save()
+        mtime = self.rc_path.stat().st_mtime
 
-    def _get_default_config(self) -> Dict:
-        """Retorna a estrutura padrão atualizada"""
-        return {
-            "settings": {
-                "startup": {
-                    "default_save_location": "",
-                    "restore_last_session": True
-                },
-                "session": {
-                    "last_opened_file": "",
-                    "recent_files": [],
-                    "auto_save": False,
-                    "auto_save_interval": 60
-                },
-                "editor": {
-                    "tab_size": 4,
-                    "use_spaces": True,
-                    "auto_indent": True,
-                    "word_wrap": True,
-                    "highlight_current_line": True
-                },
-                "ui": {
-                    "line_numbers": True,
-                    "theme": "dark",
-                    "status_bar": True
-                },
-                "search": {
-                    "case_sensitive": False,
-                    "use_regex": False,
-                    "highlight_all_matches": True
-                }
-            }
-        }
+        if self._rc_mtime is None:
+            self._rc_mtime = mtime
+            return False
+
+        if mtime != self._rc_mtime:
+            self._rc_mtime = mtime
+
+            rc_config = parse_rc_file(self.rc_path)
+            self.data.update(rc_config)
+            return True
+        return False
+
+    def save(self):
+        self.config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(self.config_path, "w") as f:
+            json.dump(self.data, f, indent=4)
+
+    def set(self, key: str, value: Any, auto_save=True):
+        self.data[key] = value
+
+        if auto_save:
+            try:
+                self.save()
+            except Exception:
+                pass
+
+        return True

@@ -1,19 +1,14 @@
-# Arquivo do Usuário (Local): ~/.supernannorc
-# Arquivo do Sistema (Global): /etc/supernannorc
-# Locais Alternativos: ~/.config/supernanno/supernannorc ou $XDG_CONFIG_HOME/supernanno/supernannorc
+# SuperNanno configuration
 
-# Example Settings in ~/.supernannorc:
-
-[ui]
-set autoindent   # Automatic indentation
-set mouse        # Enable mouse support
-set smooth       # Smooth scrolling
-set tabsize 4    # Set tab width
-line_numbers = true
-word_wrap = true
-
-[startup]
-default_save_location = "~/Documents"
-
-[signature]
-created_by = "Heitor"
+set backup
+set backupdir ~/.config/Bisneto/SuperNanno/Backup
+set configwatcher
+set configwatcherinterval 1
+set indenttype spaces
+set operatingdir ~/
+set pathdisplay full
+set restoresession
+set sidebar
+set sidebarwidth 35
+set tabbehavior indent
+set tabsize 4

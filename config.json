@@ -2,7 +2,7 @@
     "settings": {
         "startup": {
             "default_save_location": "",
-            "restore_last_session": true
+            "restore_session": true
         },
         "session": {
             "last_opened_file": "",

@@ -14,26 +14,21 @@ class SearchBar(Vertical):
         yield self.replace_input
 
     def show(self):
-        """Show the searchbar (Find)"""
         self.display = True
         self.search_input.focus()
 
     def hide(self):
-        """Hide the searchbar (Find)"""
         self.display = False
 
     def show_replace(self):
-        """Show the Replace field"""
         self.replace_input.display = True
         self.replace_input.focus()
 
     def hide_replace(self):
-        """Hide the Replace field"""
         self.replace_input.display = False
         self.search_input.focus()
 
     def toggle_replace(self):
-        """Toggle the visibility of the Replace field"""
         if self.replace_input.display:
             self.hide_replace()
         else:

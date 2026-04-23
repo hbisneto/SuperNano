@@ -1,127 +1,257 @@
 # states/search.py
 
 from textual.widgets import Input
-from textual.widgets.text_area import Selection   # opcional, mas recomendado
+from search.controller import SearchController
+from textual.widgets.text_area import Selection
 
 class SearchState:
     def __init__(self):
+        self.controller = SearchController()
+        self.result = None
         self.current_term = ""
-        self.matches = []
         self.current_match_index = -1
 
-    def on_enter(self, ctx):
-        """CTRL+F: Opens the Find field"""
+    @property
+    def matches(self) -> list[int]:
+        if self.result and self.result.has_matches:
+            return self.result.matches
+        return []
 
+    def on_enter(self, ctx):
         ctx.app.search_container.display = True
         ctx.app.search_bar.show()
+        ctx.app.search_bar.search_input.focus()
         ctx.app.search_bar.hide_replace()
 
         editor = ctx.editor
-        if hasattr(editor, 'cursor_location') and editor.cursor_location:
+        if hasattr(editor, "cursor_location") and editor.cursor_location:
             cursor = editor.cursor_location
             editor.selection = (cursor, cursor)
         else:
             editor.selection = (0, 0)
 
+        self.result = None
         self.current_term = ""
-        self.matches = []
         self.current_match_index = -1
 
-        ctx.status.set("Find • ↓ to show replace • ESC to cancel")
+        ctx.status.set("Find  •  ↓ replace  •  ESC to cancel")
 
     def on_exit(self, ctx):
-        """Fecha tudo"""
         ctx.app.search_container.display = False
         ctx.app.search_bar.hide()
         ctx.app.editor.focus()
-        ctx.status.set(ctx.app.get_default_status())
+        ctx.status.set(ctx.get_default_status())
+
+    ###==================== INPUT EVENTS ====================###
+
+    def handle_enter(self, ctx):
+        focused = getattr(ctx.app, "focused", None)
+
+        if not focused:
+            return False
+
+        widget_id = getattr(focused, "id", "")
+
+        if widget_id == "replace_input":
+            self.replace_one(ctx)
+            return True
+
+        if widget_id == "search_input":
+            self.next_match(ctx)
+            return True
+
+        self.next_match(ctx)
+        return True
 
     def handle_input(self, ctx, event):
-        if not hasattr(event, 'input') or not hasattr(event, 'value'):
+        if not hasattr(event, "input") or not hasattr(event, "value"):
             return
 
-        input_id = getattr(event.input, 'id', None)
+        input_id = getattr(event.input, "id", None)
         value = event.value
 
         if input_id == "search_input":
-            new_term = value.strip()
-            if new_term != self.current_term:
-                self.current_term = new_term
-                self._find_matches(ctx)
-                self.current_match_index = 0 if self.matches else -1
-                self._go_to_match(ctx)
+            self._on_find_changed(ctx, value)
 
         elif input_id == "replace_input":
-            if isinstance(event, Input.Submitted):
-                if self.current_match_index >= 0 and self.current_term:
-                    self._do_replace(ctx, value)
-                    self.next_match(ctx)
+            return
 
-    ###==================== NEW: Arrow Key Control ====================###
-    def handle_key(self, ctx, event):
-        """Called by key.py when we are in SearchState"""
+    def handle_key(self, ctx, event) -> bool:
         if event.key == "down":
             ctx.app.search_bar.show_replace()
-            ctx.status.set("Replace mode • ↑ for Find only • ESC to cancel")
+            if self.current_match_index >= 0:
+                self._go_to_match(ctx)
+            ctx.status.set("Replace mode  •  ↑ Find  •  ESC to cancel")
             return True
         elif event.key == "up":
             ctx.app.search_bar.hide_replace()
-            ctx.status.set("Find • ↓ to show replace • ESC to cancel")
+            ctx.status.set("Find  •  ↓ replace  •  ESC to cancel")
             return True
         return False
 
+    ###==================== NAVIGATION ====================###
+
     def next_match(self, ctx):
-        if not self.matches: return
+        if not self.matches:
+            return
         self.current_match_index = (self.current_match_index + 1) % len(self.matches)
         self._go_to_match(ctx)
 
     def prev_match(self, ctx):
-        if not self.matches: return
+        if not self.matches:
+            return
         self.current_match_index = (self.current_match_index - 1) % len(self.matches)
         self._go_to_match(ctx)
 
-    def _find_matches(self, ctx):
-        text = ctx.editor.text
-        term = self.current_term
-        if not term:
-            self.matches = []
+    ###==================== REPLACE (button_pressed.py and hadle_input) ====================###
+
+    def replace_one(self, ctx, replace_text: str | None = None):
+        if replace_text is None:
+            replace_text = self._get_replace_text(ctx)
+
+        if self.current_match_index < 0 or not self.matches:
+            ctx.status.set("No results")
             return
-        self.matches = []
-        start = 0
-        while True:
-            idx = text.find(term, start)
-            if idx == -1: break
-            self.matches.append(idx)
-            start = idx + len(term)
+
+        self._do_replace(ctx, replace_text)
+
+    def replace_all(self, ctx, replace_text: str | None = None):
+        if replace_text is None:
+            replace_text = self._get_replace_text(ctx)
+
+        if not self.matches or not self.current_term:
+            ctx.status.set("No results")
+            return
+
+        editor = ctx.editor
+        text = editor.text
+        term_len = len(self.current_term)
+        count = len(self.matches)
+
+        for idx in reversed(self.matches):
+            text = text[:idx] + replace_text + text[idx + term_len:]
+
+        self._apply_text(editor, text)
+
+        self._find_matches(ctx)
+        self.current_match_index = 0 if self.matches else -1
+
+        ctx.status.set(
+            f"Replaced {count}x '{self.current_term}' → '{replace_text}'",
+            delay=3,
+            next_text=ctx.get_default_status()
+        )
+
+    ###==================== PRIVATE ====================###
+
+    def _apply_match(self, ctx, index: int):
+        if not self.matches:
+            return
+
+        idx = self.matches[index]
+        term = self.current_term
+        editor = ctx.editor
+
+        start = editor.document.get_location_from_index(idx)
+        end = editor.document.get_location_from_index(idx + len(term))
+
+        editor.cursor_location = start
+        editor.selection = (start, end)
+
+        ctx.status.set(f"Match {index + 1}/{len(self.matches)}: '{term}'")
+
+    def _on_find_changed(self, ctx, value: str):
+        new_term = value.strip()
+        if new_term == self.current_term:
+            return
+
+        self.current_term = new_term
+        self._find_matches(ctx)
+        self.current_match_index = 0 if self.matches else -1
+        self._go_to_match(ctx)
+
+    def _find_matches(self, ctx):
+        if not self.current_term.strip():
+            ctx.status.set("Empty search")
+            self.result = None
+            return
+
+        # [PLUGIN]: BEFORE HOOK
+        ctx.execute_hook("before_search", self.current_term)
+
+        self.result = self.controller.search(
+            ctx.editor.text,
+            self.current_term
+        )
+
+        # [PLUGIN]: AFTER HOOK
+        ctx.execute_hook("after_search", self.result)
+
+        if not self.result or not self.result.has_matches:
+            ctx.status.set(f"Not Found: '{self.current_term}'")
 
     def _go_to_match(self, ctx):
         if not self.matches:
-            ctx.status.set(f"Not found: '{self.current_term}'")
+            ctx.status.set(f"Not Found: '{self.current_term}'")
             return
+        
+        self._apply_match(ctx, self.current_match_index)
+
+    def _do_replace(self, ctx, replace_text: str):
+        if (
+            not self.matches
+            or self.current_match_index < 0
+            or self.current_match_index >= len(self.matches)
+        ):
+            return
+
         idx = self.matches[self.current_match_index]
         term_len = len(self.current_term)
+
         editor = ctx.editor
+        start = editor.document.get_location_from_index(idx)
+        end = editor.document.get_location_from_index(idx + term_len)
 
-        start_loc = editor.document.get_location_from_index(idx)
-        end_loc = editor.document.get_location_from_index(idx + term_len)
-
-        editor.cursor_location = start_loc
-        editor.selection = (start_loc, end_loc)
-
-        ctx.status.set(f"Match {self.current_match_index + 1}/{len(self.matches)}: '{self.current_term}'")
-
-    def _do_replace(self, ctx, replace_text):
-        if self.current_match_index < 0 or not self.matches:
-            return
-        idx = self.matches[self.current_match_index]
-        term_len = len(self.current_term)
-        text = ctx.editor.text
-
-        new_text = text[:idx] + replace_text + text[idx + term_len:]
-        ctx.editor.text = new_text
+        editor.replace(
+            replace_text,
+            start,
+            end,
+            maintain_selection_offset=False,
+        )
 
         self._find_matches(ctx)
-        if self.matches:
-            self.current_match_index = min(self.current_match_index, len(self.matches) - 1)
 
-        ctx.status.set(f"Replaced: '{self.current_term}' --> '{replace_text}'")
+        if self.matches:
+            next_index = 0
+
+            for i, match_idx in enumerate(self.matches):
+                if match_idx > idx:
+                    next_index = i
+                    break
+
+            self.current_match_index = next_index
+            self._go_to_match(ctx)
+        else:
+            self.current_match_index = -1
+
+        ctx.status.set(
+            f"Replaced: '{self.current_term}' → '{replace_text}'"
+        )
+
+    @staticmethod
+    def _apply_text(editor, new_text: str):
+        doc = editor.document
+        end_loc = doc.get_location_from_index(len(editor.text))
+
+        editor.replace(
+            new_text,
+            (0, 0),
+            end_loc,
+        )
+
+    def _get_replace_text(self, ctx) -> str:
+        try:
+            from textual.widgets import Input
+            return ctx.app.query_one("#replace_input", Input).value
+        except Exception:
+            return ""
