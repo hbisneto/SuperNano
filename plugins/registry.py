@@ -24,4 +24,4 @@ class PluginRegistry:
             try:
                 hook(ctx, *args, **kwargs)
             except Exception as e:
-                ctx.status.error(f"Plugin hook '{hook_name}' error: {e}")
+                ctx.status.error(f"(Plugin): Hook '{hook_name}' failed - {e}")

@@ -62,7 +62,7 @@ class AppContext:
 
     def get_default_status(self) -> str:
         if not self.editor:
-            return "SuperNanno"
+            return "SuperNanno | Ready"
 
         path = self.current_path
         path_str = path.name if path and self.path_display == "name" else str(path or "SuperNanno")
@@ -78,14 +78,14 @@ class AppContext:
             row, col = 1, 1
 
         if self.read_only:
-            return f"(READ ONLY) {path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
+            return f"(READ-ONLY): {path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
         return f"{path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
 
     def mark_clean(self):
         if self.editor:
             self.editor_state.mark_saved(self.editor.text)
 
-    def check_dirty_before(self, action, message: str = "Unsaved changes! Confirm to discard?") -> bool:
+    def check_dirty_before(self, action, message: str = "(Editor): Unsaved changes") -> bool:
         if not self.is_dirty:
             action()
             self.clear_pending_action()
@@ -98,7 +98,7 @@ class AppContext:
             return True
 
         self.pending_action = action
-        self.status.warning(message + " (press again to confirm)")
+        self.status.warning(f"{message} — press again to confirm")
         return False
 
     def clear_pending_action(self):
