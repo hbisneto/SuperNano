@@ -31,4 +31,4 @@ def _handle_dirty(ctx, event):
         return
 
     app.confirm_action = lambda: app.load_file(str(event.item.path))
-    ctx.status.warning("Click again to discard changes")
+    ctx.status.warning("(Editor): Unsaved changes — Click again to discard")

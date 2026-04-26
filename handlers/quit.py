@@ -10,7 +10,7 @@ def execute(ctx):
             action = app.confirm_action
             app.confirm_action = None
             action()
-            ctx.status.info("Changes discarded")
+            ctx.status.info("(Editor): Changes discarded")
             return
 
         elif getattr(app, "_confirm_quit", False):
@@ -19,7 +19,7 @@ def execute(ctx):
 
         else:
             app._confirm_quit = True
-            ctx.status.warning("Unsaved changes! Press CTRL+Q again to exit.")
+            ctx.status.warning("(Editor): Unsaved changes — press CTRL+Q again to exit")
             return
 
     app.exit()

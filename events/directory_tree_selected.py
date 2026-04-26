@@ -9,10 +9,10 @@ def handle(ctx, event):
         elif hasattr(event, "item") and hasattr(event.item, "path"):
             path_str = str(event.item.path)
         else:
-            ctx.status.warning("DirectoryTree: invalid event format")
+            ctx.status.warning("(Sidebar): Invalid selection")
             return
 
         file.load(ctx, path_str)
 
     except Exception as e:
-        ctx.status.error(f"Error opening file from sidebar: {e}", delay=4)
+        ctx.status.error(f"(File): Open failed - {e}")

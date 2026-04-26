@@ -29,7 +29,7 @@ def _do_new(ctx):
     ctx.mark_clean()
     ctx.editor.focus()
 
-    ctx.status.persist("(New file): Untitled")
+    ctx.status.persist("(File): New file")
 
 def open(ctx):
     input_w = ctx.app.query_one("#path_input", Input)
@@ -41,7 +41,7 @@ def open(ctx):
     if ctx.path_container:
         ctx.path_container.display = True
 
-    ctx.status.persist("(Open): Enter path to open a file or directory")
+    ctx.status.persist("(Path): Enter path to open file or folder")
 
 def load(ctx, path_str: str, silent: bool = False):
     path = Path(path_str).expanduser().resolve()
@@ -49,11 +49,11 @@ def load(ctx, path_str: str, silent: bool = False):
     if path.is_dir():
         ctx.directory_tree.path = str(path)
         ctx.directory_tree.reload()
-        ctx.status.info(f"(Loaded folder): {path.name}")
+        ctx.status.info(f"(Path): Loaded \"{path.name}\"")
         return
 
     if not path.is_file():
-        ctx.status.error(f"File not found: {path}")
+        ctx.status.error(f"(File): Not found \"{path}\"")
         return
 
     def do_load():
@@ -73,7 +73,7 @@ def load(ctx, path_str: str, silent: bool = False):
             ctx.editor.focus()
 
             if not silent:
-                ctx.status.info(f"(Opened): {path.name}")
+                ctx.status.info(f"(File): Loaded \"{path.name}\"")
 
             if hasattr(ctx.app, 'cli_args') and ctx.app.cli_args:
                 cli = ctx.app.cli_args
@@ -86,7 +86,7 @@ def load(ctx, path_str: str, silent: bool = False):
                     SearchController().search(ctx, cli.search)
 
         except Exception as e:
-            ctx.status.error(f"Error loading file: {e}")
+            ctx.status.error(f"(File): Load failed - {e}")
 
     if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
         return
@@ -105,7 +105,7 @@ def read(ctx, value: str | None = None):
         if ctx.path_container:
             ctx.path_container.display = True
 
-        ctx.status.persist("(Read): Enter file path to insert")
+        ctx.status.persist("(File): Enter path to insert")
         return
     _do_read(ctx, value)
 
@@ -113,7 +113,7 @@ def _do_read(ctx, value: str):
     path = Path(value).expanduser()
 
     if not path.exists() or path.is_dir():
-        ctx.status.warning(f"Cannot read: {path}", delay=3)
+        ctx.status.warning(f"(File): Cannot read \"{path}\"")
         return
 
     try:
@@ -138,15 +138,14 @@ def _do_read(ctx, value: str):
 
         editor.text = new_text
         editor.cursor_location = editor.document.get_location_from_index(new_index)
-
-        ctx.status.success(f"(Inserted): {path.name}", delay=3)
+        ctx.status.success(f"(File): Inserted \"{path.name}\"")
 
     except Exception as e:
-        ctx.status.error(f"Error inserting file: {e}")
+        ctx.status.error(f"(File): Insert failed - {e}")
 
 def save(ctx):
     if ctx.read_only:
-        ctx.status.warning("(Read Only) Cannot save file")
+        ctx.status.warning("(Editor): Cannot save in read-only mode")
         return
 
     if ctx.current_path:
@@ -169,7 +168,7 @@ def _do_save(ctx, path: Path):
         if ctx.directory_tree:
             ctx.directory_tree.reload()
 
-        ctx.status.success(f"(Saved): {path.name}", delay=3)
+        ctx.status.success(f"(File): Saved \"{path.name}\"")
 
     except Exception as e:
-        ctx.status.error(f"Save failed: {e}", delay=5)
+        ctx.status.error(f"(File): Save failed - {e}")

@@ -20,9 +20,7 @@ def handle(ctx):
             return
 
         ctx.current_path = None
-        ctx.status.warning(
-            f"(Startup): File not found: {path}"
-        )
+        ctx.status.warning(f"(File): Not found \"{path}\"")
         return
 
     if not ctx.app.explicit_file_open and ctx.restore_session:
@@ -31,5 +29,5 @@ def handle(ctx):
             path = Path(last_file)
             if path.exists() and path.is_file():
                 load(ctx, str(path), silent=True)
-                ctx.status.info(f"(Session Restored): {path.name}")
+                ctx.status.info(f"(Session): Restored \"{path.name}\"")
 

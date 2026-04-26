@@ -149,7 +149,7 @@ class SuperNanno(App):
 
     def on_config_reload(self):
         self.ctx.config_applier.apply(self.ctx.config.data)
-        self.ctx.status.info("(Config Reloaded)")
+        self.ctx.status.info("(Config): Reloaded")
 
     # ==================== AUX METHODS ====================
 
@@ -171,11 +171,11 @@ class SuperNanno(App):
             self.path_container.display = True
         input_widget = self.query_one("#path_input", Input)
         input_widget.display = True
-        input_widget.placeholder = "Save as: ./file.txt"
+        input_widget.placeholder = "Enter path to save (e.g. ./file.txt)"
         input_widget.value = "./"
         input_widget.focus()
         self.input_mode = "save"
-        self.ctx.status.persist("Enter path to save file")
+        self.ctx.status.persist("(Path): Enter path to save file")
 
 def main():
     cli_args = parse_cli_args()
@@ -186,7 +186,7 @@ def main():
         print(VERSION)
         return
     if cli_args.invalid_arg:
-        print(f'SuperNanno: Unrecognized Option `{cli_args.invalid_arg}`')
+        print(f'supernanno: unrecognized option `{cli_args.invalid_arg}`')
         print(HELP_TEXT)
         sys.exit(1)
 

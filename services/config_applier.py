@@ -65,11 +65,7 @@ class ConfigApplier:
             path = Path(value).expanduser().resolve()
 
             if not path.exists() or not path.is_dir():
-                self.app.set_status(
-                    f"(Config): invalid directory -> {path}",
-                    delay=3,
-                    status_type="warning"
-                )
+                self.ctx.status.warning(f"(Config): Invalid directory \"{path}\"")
                 return
 
             tree = self.app.directory_tree
@@ -77,11 +73,7 @@ class ConfigApplier:
             tree.reload()
 
         except Exception as e:
-            self.app.set_status(
-                f"(Config): {e}",
-                delay=3,
-                status_type="warning"
-            )
+            self.ctx.status.warning(f"(Config): Failed to apply directory - {e}")
     
     def apply_path_display(self, value):
         allowed = {"full", "name"}
