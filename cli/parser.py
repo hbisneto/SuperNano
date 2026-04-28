@@ -3,9 +3,16 @@
 import sys
 from cli.models import CLIArgs
 
-def parse_cli_args() -> CLIArgs:
+def parse_cli_args(plugin_cli_registry: list[dict] | None = None) -> CLIArgs:
     args = sys.argv[1:]
     result = CLIArgs()
+
+    plugin_flags: dict[str, dict] = {}
+    if plugin_cli_registry:
+        for entry in plugin_cli_registry:
+            flag = entry.get("flag", "")
+            if flag:
+                plugin_flags[flag] = entry
 
     i = 0
     while i < len(args):
@@ -38,7 +45,22 @@ def parse_cli_args() -> CLIArgs:
             result.backup_dir = arg.split("=", 1)[1]
             i += 1
             continue
-        
+
+        if arg in plugin_flags:
+            entry = plugin_flags[arg]
+            expected_args = entry.get("args", [])
+            command = entry["command"]
+            collected_args = []
+
+            for _ in expected_args:
+                if i + 1 < len(args) and not args[i + 1].startswith("-"):
+                    i += 1
+                    collected_args.append(args[i])
+
+            result.plugin_commands.append((command, collected_args))
+            i += 1
+            continue
+
         if arg.startswith("--") and arg not in ("--help", "--version"):
             result.invalid_arg = arg
             return result
@@ -62,9 +84,16 @@ def parse_cli_args() -> CLIArgs:
                     except ValueError:
                         pass
         else:
-            # É o nome do arquivo
             result.file = arg
 
         i += 1
 
     return result
+
+def run_plugin_cli_commands(ctx) -> None:
+    cli_args = getattr(ctx.app, "cli_args", None)
+    if not cli_args:
+        return
+
+    for command, args in cli_args.plugin_commands:
+        ctx.execute_plugin_command(command, *args)

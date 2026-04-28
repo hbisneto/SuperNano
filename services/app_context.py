@@ -198,3 +198,19 @@ class AppContext:
 
     def execute_hook(self, hook_name: str, *args, **kwargs):
         self.plugins.execute_hook(hook_name, self, *args, **kwargs)
+
+    def execute_plugin_binding(self, key: str) -> bool:
+        key = key.lower().strip()
+
+        for b in self.plugins.bindings:
+            plugin_key = b["key"].lower().strip()
+            parts = plugin_key.split()
+
+            if len(parts) == 2:
+                expected = parts[1]
+
+                if key == expected:
+                    self.execute_plugin_command(b["command"])
+                    return True
+
+        return False

@@ -35,12 +35,13 @@ from textual.widgets import (
     ListView
 )
 from ui.bindings import (
-    BINDINGS, 
+    BINDINGS,
     CSS_FILE,
     WELCOME
 )
 from ui.layout import create_layout
 from ui.settings.screen import SettingsScreen
+
 
 class SuperNanno(App):
     BINDINGS = BINDINGS
@@ -67,14 +68,14 @@ class SuperNanno(App):
                 self.ctx.current_path = Path(cli_args.file)
 
     def compose(self) -> ComposeResult:
-        (header, 
-            self.sidebar, 
-            main_content, 
-            footer, 
-            self.directory_tree, 
-            self.search_bar, 
-            self.path_input, 
-            self.editor, 
+        (header,
+            self.sidebar,
+            main_content,
+            footer,
+            self.directory_tree,
+            self.search_bar,
+            self.path_input,
+            self.editor,
             self.status,
             self.search_container,
             self.path_container,

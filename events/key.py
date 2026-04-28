@@ -1,6 +1,31 @@
 # events/key.py
 
+import time
+
 def handle(ctx, event):
+    if not hasattr(ctx, "_leader_mode"):
+        ctx._leader_mode = False
+        ctx._leader_time = 0
+
+    if event.key == "ctrl+k":
+        ctx._leader_mode = True
+        ctx._leader_time = time.time()
+        ctx.status.info("(Plugin): Awaiting key (Ctrl+K)...")
+        return
+
+    if ctx._leader_mode and (time.time() - ctx._leader_time > 2):
+        ctx._leader_mode = False
+
+    if ctx._leader_mode:
+        ctx._leader_mode = False
+
+        handled = ctx.execute_plugin_binding(event.key)
+
+        if not handled:
+            ctx.status.warning(f"(Plugin): No action for '{event.key}'")
+
+        return
+
     state = ctx.state
     
     if ctx.app.in_startup:

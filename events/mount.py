@@ -3,6 +3,8 @@
 from pathlib import Path
 from events import cursor_watcher
 from handlers import load
+from plugins.loader import load_plugins
+from cli.parser import run_plugin_cli_commands
 
 
 def handle(ctx):
@@ -11,6 +13,9 @@ def handle(ctx):
     if not hasattr(app, "_cursor_watcher_running"):
         app._cursor_watcher_running = True
         app.run_worker(cursor_watcher.watch(ctx), name="cursor_watcher")
+
+    load_plugins(ctx)
+    run_plugin_cli_commands(ctx)
 
     if ctx.app.explicit_file_open and ctx.current_path:
         path = Path(ctx.current_path).expanduser()
@@ -30,4 +35,3 @@ def handle(ctx):
             if path.exists() and path.is_file():
                 load(ctx, str(path), silent=True)
                 ctx.status.info(f"(Session): Restored \"{path.name}\"")
-
