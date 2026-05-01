@@ -42,7 +42,6 @@ from ui.bindings import (
 from ui.layout import create_layout
 from ui.settings.screen import SettingsScreen
 
-
 class SuperNanno(App):
     BINDINGS = BINDINGS
     CSS_PATH = CSS_FILE

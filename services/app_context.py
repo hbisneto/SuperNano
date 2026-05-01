@@ -1,17 +1,15 @@
 # services/app_context.py
 
-from pathlib import Path
-from pygments.lexers import guess_lexer
-
 from core.editor import EditorState
 from core.file_manager import FileManager
 from core.status import StatusService
 from services.config_manager import ConfigManager
 from services.session_manager import SessionManager
 from services.config_applier import ConfigApplier
+from pathlib import Path
 from plugins.registry import PluginRegistry
+from pygments.lexers import guess_lexer
 from states.search import SearchState
-
 
 class AppContext:
     def __init__(self, app):
@@ -20,6 +18,7 @@ class AppContext:
         self.current_path: Path | None = None
         self.state = None
         self.pending_action = None
+        self._pending_plugin_command: str | None = None
 
         # Settings
         self.config_watcher = True
@@ -187,6 +186,9 @@ class AppContext:
 
     # ==================== PLUGIN SUPPORT ====================
 
+    def get_next_plugin_actions(self, sequence: list[str]) -> dict:
+        return self.plugins.get_next_keys(sequence)
+
     def register_plugin_command(self, name: str, func: callable):
         self.plugins.register_command(name, func)
 
@@ -199,18 +201,43 @@ class AppContext:
     def execute_hook(self, hook_name: str, *args, **kwargs):
         self.plugins.execute_hook(hook_name, self, *args, **kwargs)
 
-    def execute_plugin_binding(self, key: str) -> bool:
-        key = key.lower().strip()
+    def execute_plugin_sequence(self, sequence: list[str]) -> tuple[bool, bool]:
+        node = self.plugins.binding_tree
 
-        for b in self.plugins.bindings:
-            plugin_key = b["key"].lower().strip()
-            parts = plugin_key.split()
+        for key in sequence:
+            if key not in node:
+                return False, False
+            node = node[key]
 
-            if len(parts) == 2:
-                expected = parts[1]
+        has_command = "__cmd__" in node
+        has_children = any(k != "__cmd__" for k in node)
 
-                if key == expected:
-                    self.execute_plugin_command(b["command"])
-                    return True
+        if has_command:
+            self._pending_plugin_command = node["__cmd__"]
+            return True, False
 
-        return False
+        if has_children:
+            return False, True
+
+        return False, False
+
+    def run_pending_plugin_command(self):
+        cmd = self._pending_plugin_command
+        if cmd:
+            self._pending_plugin_command = None
+            self.execute_plugin_command(cmd)
+
+    # ==================== UX ====================
+
+    def get_plugin_keys_help(self) -> str:
+        def walk(node, prefix=[]):
+            keys = []
+            for k, v in node.items():
+                if k == "__cmd__":
+                    keys.append(" ".join(prefix))
+                else:
+                    keys.extend(walk(v, prefix + [k]))
+            return keys
+
+        all_keys = walk(self.plugins.binding_tree)
+        return ", ".join(sorted(all_keys)) if all_keys else "no bindings"
