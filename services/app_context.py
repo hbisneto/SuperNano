@@ -40,6 +40,12 @@ class AppContext:
         )
         self.config_applier = ConfigApplier(self)
         self.plugins = PluginRegistry()
+        self.word_count = 0
+        self.char_count = 0
+        self.file_size = 0
+        self.encoding = "UTF-8"
+        self.eol = "LF"
+        self.read_time = 0
 
     @property
     def editor(self):
@@ -60,6 +66,15 @@ class AppContext:
         if self.state and hasattr(self.state, "on_enter"):
             self.state.on_enter(self)
 
+    @staticmethod
+    def format_size(size):
+        if size < 1024:
+            return f"{size} bytes"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        else:
+            return f"{size / (1024 * 1024):.1f} MB"
+
     def get_default_status(self) -> str:
         if not self.editor:
             return "SuperNanno | Ready"
@@ -77,9 +92,34 @@ class AppContext:
         except Exception:
             row, col = 1, 1
 
+        # ==================== STATS ==================== #
+
+        stats_parts = []
+
+        if self.word_count > 0:
+            stats_parts.append(f"Words {self.word_count},")
+
+        if self.char_count > 0:
+            stats_parts.append(f"Chars {self.char_count}")
+
+        stats = f" | {' '.join(stats_parts)}" if stats_parts else ""
+
+        # ==================== EXTRA ==================== #
+
+        size = f" | {self.format_size(self.file_size)}" if self.file_size else ""
+        eol = f" | {self.eol}" if self.eol else ""
+        encoding = f" | {self.encoding}" if self.encoding else ""
+        read_time = f" | ~{self.read_time}m read" if self.read_time else ""
+
+        base = (
+            f"{path_str}{dirty} | {lang} | Ln {row}, Col {col}"
+            f"{stats}{size}{read_time}{eol}{encoding}"
+        )
+
         if self.read_only:
-            return f"(READ-ONLY): {path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
-        return f"{path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
+            return f"(READ-ONLY): {base}"
+
+        return base
 
     def mark_clean(self):
         if self.editor:
