@@ -13,6 +13,7 @@ class ConfigApplier:
             "backupdir": self.apply_backup_dir,
             "configwatcher": self.apply_config_watcher,
             "configwatcherinterval": self.apply_config_watcher_interval,
+            "debug": self.apply_debug,
             "indenttype": self.apply_indent_type,
             "operatingdir": self.apply_operating_dir,
             "pathdisplay": self.apply_path_display,
@@ -48,6 +49,11 @@ class ConfigApplier:
             self.ctx.config_watcher_interval = max(1, int(value))
         except (TypeError, ValueError):
             self.ctx.config_watcher_interval = 1
+
+    def apply_debug(self, value):
+        self.ctx.debug_mode = bool(value)
+        if self.ctx.debug_mode:
+            self.ctx.logs.info("Debug mode enabled")
 
     def apply_indent_type(self, value):
         editor = self.ctx.editor

@@ -28,6 +28,9 @@ DEFAULT_CONFIG = {
     "sidebar": True,
     "sidebarwidth": 35,
     "pathdisplay": "full",
+
+    # Debug
+    "debug": False,
 }
 
 class ConfigManager:

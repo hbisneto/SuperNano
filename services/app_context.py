@@ -1,19 +1,20 @@
 # services/app_context.py
 
-from pathlib import Path
-from pygments.lexers import guess_lexer
-
 from core.editor import EditorState
 from core.file_manager import FileManager
+from core.logger import Logger
 from core.status import StatusService
-from services.config_manager import ConfigManager
-from services.session_manager import SessionManager
+from pathlib import Path
+from pygments.lexers import guess_lexer
+from services import paths
+from services.error_service import ErrorService
 from services.config_applier import ConfigApplier
-from plugins.registry import PluginRegistry
-from states.search import SearchState
-
+from services.config_manager import ConfigManager
+from services.log_service import LogService
+from services.session_manager import SessionManager
 
 class AppContext:
+
     def __init__(self, app):
         self.app = app
 
@@ -21,7 +22,7 @@ class AppContext:
         self.state = None
         self.pending_action = None
 
-        # Settings
+        # ==================== SETTINGS ====================
         self.config_watcher = True
         self.config_watcher_interval = 1
         self.restore_session = True
@@ -29,8 +30,9 @@ class AppContext:
         self.backup_dir: Path | None = None
         self.read_only = False
         self.path_display = "full"
+        self.debug_mode = False                    # ← Novo
 
-        # Services
+        # ==================== SERVICES ====================
         self.editor_state = EditorState()
         self.file_manager = FileManager()
         self.status = StatusService(self, debug=True)
@@ -39,13 +41,23 @@ class AppContext:
             create_if_missing=not getattr(app, "explicit_file_open", False)
         )
         self.config_applier = ConfigApplier(self)
-        self.plugins = PluginRegistry()
+
+        # Logging
+        self.logger = Logger(paths.get_logs_dir())   # Core
+        self.logs = LogService(self)                 # Service Layer
+        self.errors = ErrorService(self)
+
+        # Stats
         self.word_count = 0
         self.char_count = 0
         self.file_size = 0
         self.encoding = "UTF-8"
         self.eol = "LF"
         self.read_time = 0
+
+        self.last_exception = None
+        self.last_exception_type = None
+        self.last_exception_time = None
 
     @property
     def editor(self):
@@ -224,17 +236,3 @@ class AppContext:
                 editor.scroll_to(y=row, x=0, animate=False)
             except Exception:
                 pass
-
-    # ==================== PLUGIN SUPPORT ====================
-
-    def register_plugin_command(self, name: str, func: callable):
-        self.plugins.register_command(name, func)
-
-    def register_plugin_hook(self, hook_name: str, func: callable):
-        self.plugins.register_hook(hook_name, func)
-
-    def execute_plugin_command(self, name: str, *args, **kwargs) -> bool:
-        return self.plugins.execute_command(name, self, *args, **kwargs)
-
-    def execute_hook(self, hook_name: str, *args, **kwargs):
-        self.plugins.execute_hook(hook_name, self, *args, **kwargs)
