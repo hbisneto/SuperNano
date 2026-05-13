@@ -1,19 +1,21 @@
 # services/app_context.py
 
-from pathlib import Path
-from pygments.lexers import guess_lexer
-
 from core.editor import EditorState
 from core.file_manager import FileManager
+from core.logger import Logger
 from core.status import StatusService
-from services.config_manager import ConfigManager
-from services.session_manager import SessionManager
+from pathlib import Path
+from pygments.lexers import guess_lexer
+from services import paths
+from services.error_service import ErrorService
 from services.config_applier import ConfigApplier
-from plugins.registry import PluginRegistry
-from states.search import SearchState
-
+from services.config_manager import ConfigManager
+from services.issue_service import IssueService
+from services.log_service import LogService
+from services.session_manager import SessionManager
 
 class AppContext:
+
     def __init__(self, app):
         self.app = app
 
@@ -21,25 +23,46 @@ class AppContext:
         self.state = None
         self.pending_action = None
 
-        # Settings
-        self.config_watcher = True
+        # ==================== SETTINGS ====================
+        self.config_watcher          = True
         self.config_watcher_interval = 1
-        self.restore_session = True
-        self.backup_enabled = False
+        self.restore_session         = True
+        self.backup_enabled          = False
         self.backup_dir: Path | None = None
-        self.read_only = False
-        self.path_display = "full"
+        self.read_only               = False
+        self.path_display            = "full"
+        self.debug_mode              = False
 
-        # Services
-        self.editor_state = EditorState()
-        self.file_manager = FileManager()
-        self.status = StatusService(self, debug=True)
-        self.config = ConfigManager()
-        self.session = SessionManager(
+        # ==================== SERVICES ====================
+        self.editor_state    = EditorState()
+        self.file_manager    = FileManager()
+        self.status          = StatusService(self, debug=True)
+        self.config          = ConfigManager()
+        self.session         = SessionManager(
             create_if_missing=not getattr(app, "explicit_file_open", False)
         )
-        self.config_applier = ConfigApplier(self)
-        self.plugins = PluginRegistry()
+        self.config_applier  = ConfigApplier(self)
+
+        # Logging
+        self.logger = Logger(paths.get_logs_dir())
+        self.logs   = LogService(self)
+        self.errors = ErrorService(self)
+
+        # Issue reporting
+        self.issue  = IssueService(self)
+
+        # Last exception state
+        self.last_exception:      str | None      = None
+        self.last_exception_type: str | None      = None
+        self.last_exception_time: object | None   = None
+
+        # Stats
+        self.word_count = 0
+        self.char_count = 0
+        self.file_size  = 0
+        self.encoding   = "UTF-8"
+        self.eol        = "LF"
+        self.read_time  = 0
 
     @property
     def editor(self):
@@ -60,15 +83,23 @@ class AppContext:
         if self.state and hasattr(self.state, "on_enter"):
             self.state.on_enter(self)
 
+    @staticmethod
+    def format_size(size):
+        if size < 1024:
+            return f"{size} bytes"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        else:
+            return f"{size / (1024 * 1024):.1f} MB"
+
     def get_default_status(self) -> str:
         if not self.editor:
             return "SuperNanno | Ready"
 
-        path = self.current_path
+        path     = self.current_path
         path_str = path.name if path and self.path_display == "name" else str(path or "SuperNanno")
-        dirty = "*" if self.is_dirty else ""
-
-        lang = getattr(self.editor, "language", None) or "text"
+        dirty    = "*" if self.is_dirty else ""
+        lang     = getattr(self.editor, "language", None) or "text"
 
         try:
             row, col = self.editor.cursor_location
@@ -77,9 +108,27 @@ class AppContext:
         except Exception:
             row, col = 1, 1
 
+        stats_parts = []
+        if self.word_count > 0:
+            stats_parts.append(f"Words {self.word_count},")
+        if self.char_count > 0:
+            stats_parts.append(f"Chars {self.char_count}")
+
+        stats     = f" | {' '.join(stats_parts)}" if stats_parts else ""
+        size      = f" | {self.format_size(self.file_size)}" if self.file_size else ""
+        eol       = f" | {self.eol}" if self.eol else ""
+        encoding  = f" | {self.encoding}" if self.encoding else ""
+        read_time = f" | ~{self.read_time}m read" if self.read_time else ""
+
+        base = (
+            f"{path_str}{dirty} | {lang} | Ln {row}, Col {col}"
+            f"{stats}{size}{read_time}{eol}{encoding}"
+        )
+
         if self.read_only:
-            return f"(READ-ONLY): {path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
-        return f"{path_str}{dirty} | {lang} | Ln {row}, Col {col} | UTF-8"
+            return f"(READ-ONLY): {base}"
+
+        return base
 
     def mark_clean(self):
         if self.editor:
@@ -115,7 +164,7 @@ class AppContext:
         }
 
         editor = self.editor
-        lang = language_map.get(ext)
+        lang   = language_map.get(ext)
 
         try:
             editor.language = lang
@@ -135,7 +184,6 @@ class AppContext:
     def save_session_state(self, file_path: Path | str):
         if getattr(self.app, "explicit_file_open", False) or not file_path:
             return
-
         self.session.set_last_file(str(file_path))
         self.session.save()
 
@@ -161,7 +209,6 @@ class AppContext:
 
         row = max(0, line - 1)
         col = max(0, column)
-
         editor = self.editor
 
         try:
@@ -171,7 +218,7 @@ class AppContext:
             def reset_horizontal_scroll():
                 try:
                     editor.scroll_to(x=0, animate=False)
-                    if hasattr(editor, 'scroll_x'):
+                    if hasattr(editor, "scroll_x"):
                         editor.scroll_x = 0
                 except Exception:
                     pass
@@ -184,17 +231,3 @@ class AppContext:
                 editor.scroll_to(y=row, x=0, animate=False)
             except Exception:
                 pass
-
-    # ==================== PLUGIN SUPPORT ====================
-
-    def register_plugin_command(self, name: str, func: callable):
-        self.plugins.register_command(name, func)
-
-    def register_plugin_hook(self, hook_name: str, func: callable):
-        self.plugins.register_hook(hook_name, func)
-
-    def execute_plugin_command(self, name: str, *args, **kwargs) -> bool:
-        return self.plugins.execute_command(name, self, *args, **kwargs)
-
-    def execute_hook(self, hook_name: str, *args, **kwargs):
-        self.plugins.execute_hook(hook_name, self, *args, **kwargs)

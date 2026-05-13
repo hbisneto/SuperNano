@@ -172,16 +172,10 @@ class SearchState:
             self.result = None
             return
 
-        # [PLUGIN]: BEFORE HOOK
-        ctx.execute_hook("before_search", self.current_term)
-
         self.result = self.controller.search(
             ctx.editor.text,
             self.current_term
         )
-
-        # [PLUGIN]: AFTER HOOK
-        ctx.execute_hook("after_search", self.result)
 
         if not self.result or not self.result.has_matches:
             ctx.status.warning(f"(Search): Not found \"{self.current_term}\"")

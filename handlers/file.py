@@ -87,10 +87,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except Exception as e:
             ctx.status.error(f"(File): Load failed - {e}")
+            ctx.errors.handle(e)
 
     if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
         return
-    do_load()
+    # do_load()
 
 def read(ctx, value: str | None = None):
     if value is None:
@@ -139,9 +140,11 @@ def _do_read(ctx, value: str):
         editor.text = new_text
         editor.cursor_location = editor.document.get_location_from_index(new_index)
         ctx.status.success(f"(File): Inserted \"{path.name}\"")
-
+        
+        ctx.logs.info(f"File opened successfully: {path.name}")
     except Exception as e:
         ctx.status.error(f"(File): Insert failed - {e}")
+        ctx.errors.handle(e, f"Opening file {path}")
 
 def save(ctx):
     if ctx.read_only:

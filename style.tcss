@@ -198,4 +198,8 @@ TextArea {
     scrollbar-gutter: stable;
 }
 
+Toast {
+    margin-bottom: 1;
+}
+
 Vertical {}
