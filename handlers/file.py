@@ -87,10 +87,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except Exception as e:
             ctx.status.error(f"(File): Load failed - {e}")
+            ctx.errors.handle(e)
 
     if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
         return
-    do_load()
+    # do_load()
 
 def read(ctx, value: str | None = None):
     if value is None:

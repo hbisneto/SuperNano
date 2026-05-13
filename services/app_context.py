@@ -10,6 +10,7 @@ from services import paths
 from services.error_service import ErrorService
 from services.config_applier import ConfigApplier
 from services.config_manager import ConfigManager
+from services.issue_service import IssueService
 from services.log_service import LogService
 from services.session_manager import SessionManager
 
@@ -23,41 +24,45 @@ class AppContext:
         self.pending_action = None
 
         # ==================== SETTINGS ====================
-        self.config_watcher = True
+        self.config_watcher          = True
         self.config_watcher_interval = 1
-        self.restore_session = True
-        self.backup_enabled = False
+        self.restore_session         = True
+        self.backup_enabled          = False
         self.backup_dir: Path | None = None
-        self.read_only = False
-        self.path_display = "full"
-        self.debug_mode = False                    # ← Novo
+        self.read_only               = False
+        self.path_display            = "full"
+        self.debug_mode              = False
 
         # ==================== SERVICES ====================
-        self.editor_state = EditorState()
-        self.file_manager = FileManager()
-        self.status = StatusService(self, debug=True)
-        self.config = ConfigManager()
-        self.session = SessionManager(
+        self.editor_state    = EditorState()
+        self.file_manager    = FileManager()
+        self.status          = StatusService(self, debug=True)
+        self.config          = ConfigManager()
+        self.session         = SessionManager(
             create_if_missing=not getattr(app, "explicit_file_open", False)
         )
-        self.config_applier = ConfigApplier(self)
+        self.config_applier  = ConfigApplier(self)
 
         # Logging
-        self.logger = Logger(paths.get_logs_dir())   # Core
-        self.logs = LogService(self)                 # Service Layer
+        self.logger = Logger(paths.get_logs_dir())
+        self.logs   = LogService(self)
         self.errors = ErrorService(self)
+
+        # Issue reporting
+        self.issue  = IssueService(self)
+
+        # Last exception state
+        self.last_exception:      str | None      = None
+        self.last_exception_type: str | None      = None
+        self.last_exception_time: object | None   = None
 
         # Stats
         self.word_count = 0
         self.char_count = 0
-        self.file_size = 0
-        self.encoding = "UTF-8"
-        self.eol = "LF"
-        self.read_time = 0
-
-        self.last_exception = None
-        self.last_exception_type = None
-        self.last_exception_time = None
+        self.file_size  = 0
+        self.encoding   = "UTF-8"
+        self.eol        = "LF"
+        self.read_time  = 0
 
     @property
     def editor(self):
@@ -91,11 +96,10 @@ class AppContext:
         if not self.editor:
             return "SuperNanno | Ready"
 
-        path = self.current_path
+        path     = self.current_path
         path_str = path.name if path and self.path_display == "name" else str(path or "SuperNanno")
-        dirty = "*" if self.is_dirty else ""
-
-        lang = getattr(self.editor, "language", None) or "text"
+        dirty    = "*" if self.is_dirty else ""
+        lang     = getattr(self.editor, "language", None) or "text"
 
         try:
             row, col = self.editor.cursor_location
@@ -104,23 +108,16 @@ class AppContext:
         except Exception:
             row, col = 1, 1
 
-        # ==================== STATS ==================== #
-
         stats_parts = []
-
         if self.word_count > 0:
             stats_parts.append(f"Words {self.word_count},")
-
         if self.char_count > 0:
             stats_parts.append(f"Chars {self.char_count}")
 
-        stats = f" | {' '.join(stats_parts)}" if stats_parts else ""
-
-        # ==================== EXTRA ==================== #
-
-        size = f" | {self.format_size(self.file_size)}" if self.file_size else ""
-        eol = f" | {self.eol}" if self.eol else ""
-        encoding = f" | {self.encoding}" if self.encoding else ""
+        stats     = f" | {' '.join(stats_parts)}" if stats_parts else ""
+        size      = f" | {self.format_size(self.file_size)}" if self.file_size else ""
+        eol       = f" | {self.eol}" if self.eol else ""
+        encoding  = f" | {self.encoding}" if self.encoding else ""
         read_time = f" | ~{self.read_time}m read" if self.read_time else ""
 
         base = (
@@ -167,7 +164,7 @@ class AppContext:
         }
 
         editor = self.editor
-        lang = language_map.get(ext)
+        lang   = language_map.get(ext)
 
         try:
             editor.language = lang
@@ -187,7 +184,6 @@ class AppContext:
     def save_session_state(self, file_path: Path | str):
         if getattr(self.app, "explicit_file_open", False) or not file_path:
             return
-
         self.session.set_last_file(str(file_path))
         self.session.save()
 
@@ -213,7 +209,6 @@ class AppContext:
 
         row = max(0, line - 1)
         col = max(0, column)
-
         editor = self.editor
 
         try:
@@ -223,7 +218,7 @@ class AppContext:
             def reset_horizontal_scroll():
                 try:
                     editor.scroll_to(x=0, animate=False)
-                    if hasattr(editor, 'scroll_x'):
+                    if hasattr(editor, "scroll_x"):
                         editor.scroll_x = 0
                 except Exception:
                     pass

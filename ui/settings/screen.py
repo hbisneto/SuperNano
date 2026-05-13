@@ -85,13 +85,13 @@ class SettingsScreen(Screen):
 
     def action_save(self):
         self.config.set("settings.startup.restore_session", 
-                       self.query_one("#restore_session", Checkbox).value)
+            self.query_one("#restore_session", Checkbox).value)
 
         self.config.set("settings.session.auto_save", 
-                       self.query_one("#auto_save", Checkbox).value)
+            self.query_one("#auto_save", Checkbox).value)
 
         self.config.set("settings.ui.line_numbers", 
-                       self.query_one("#line_numbers", Checkbox).value)
+            self.query_one("#line_numbers", Checkbox).value)
 
         self.notify("Settings saved successfully!", severity="information")
         self.dismiss()

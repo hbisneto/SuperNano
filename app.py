@@ -94,14 +94,17 @@ class SuperNanno(App):
     def action_open_path(self):
         open_file(self.ctx)
 
-    def action_save(self):
-        save(self.ctx)
-
+    def action_quit(self):
+        quit(self.ctx)
+    
     def action_read_file(self):
         read(self.ctx)
 
-    def action_quit(self):
-        quit(self.ctx)
+    def action_report_issue(self):
+        self.ctx.issue.open_report()
+
+    def action_save(self):
+        save(self.ctx)
 
     def action_search(self):
         self.ctx.set_state(SearchState())

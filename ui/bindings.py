@@ -1,4 +1,5 @@
 # ui/bindings.py
+
 from core import __version__ as VERSION
 
 CSS_FILE = "style.tcss"
@@ -11,6 +12,7 @@ BINDINGS = [
     ("ctrl+r", "read_file", "Read File"),
     ("ctrl+f", "search", "Search"),
     ("ctrl+q", "quit", "Quit"),
+    ("ctrl+x", "report_issue", "Report Issue"),
     ("f1", "show_settings", "Settings"),
 ]
 
