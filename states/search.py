@@ -3,21 +3,19 @@
 from states.base import BaseState
 from search.controller import SearchController
 
-_HISTORY_MAX = 20
-
-
 class SearchState(BaseState):
 
     def __init__(self):
-        self.controller          = SearchController()
-        self.current_term:  str  = ""
-        self.matches:  list[int] = []
-        self.current_match_index = -1
-        self.result              = None
-        # ── Histórico de termos pesquisados ───────────────────────────
-        self.search_history: list[str] = []
+        self.controller           = SearchController()
+        self.current_term:  str   = ""
+        self.result               = None
+        self.current_match_index  = -1
 
-    ###==================== BASE STATE ====================###
+    @property
+    def matches(self) -> list[int]:
+        if self.result and self.result.has_matches:
+            return self.result.matches
+        return []
 
     def on_enter(self, ctx):
         search_container = ctx.search_container
@@ -27,11 +25,25 @@ class SearchState(BaseState):
         search_bar = ctx.app.search_bar
         if search_bar:
             search_bar.show()
+            search_bar.search_input.focus()
+            search_bar.hide_replace()
 
-        ctx.status.persist(
-            "(Search): Type to search — ↓ show Replace, ↑ hide Replace, "
-            "Enter: next/replace, Shift+Enter: prev, Esc: exit"
-        )
+        editor = ctx.editor
+        try:
+            if hasattr(editor, "cursor_location") and editor.cursor_location:
+                cursor = editor.cursor_location
+                editor.selection = (cursor, cursor)
+        except Exception as e:
+            ctx.logs.debug(
+                f"(Search): Could not reset editor selection on enter — {e}",
+                action="SEARCH_ENTER_RESET_SELECTION",
+            )
+
+        self.result              = None
+        self.current_term        = ""
+        self.current_match_index = -1
+
+        ctx.status.persist("(Search): Find mode — ↓ replace — ESC to cancel")
 
     def on_exit(self, ctx):
         search_container = ctx.search_container
@@ -41,96 +53,64 @@ class SearchState(BaseState):
         search_bar = ctx.app.search_bar
         if search_bar:
             search_bar.hide()
-            # Garante que o replace fique escondido ao fechar
-            try:
-                search_bar.hide_replace()
-            except Exception:
-                pass
 
+        ctx.editor.focus()
         ctx.status.release()
 
     def handle_key(self, ctx, event) -> bool:
-        key = event.key
+        if event.key == "down":
+            search_bar = ctx.app.search_bar
+            if search_bar:
+                search_bar.show_replace()
+                if self.current_match_index >= 0:
+                    self._go_to_match(ctx)
+            ctx.status.persist("(Search): Replace mode — ↑ find only — ESC to cancel")
+            return True
 
-        if key == "escape":
+        if event.key == "up":
+            search_bar = ctx.app.search_bar
+            if search_bar:
+                search_bar.hide_replace()
+            ctx.status.persist("(Search): Find mode — ↓ replace — ESC to cancel")
+            return True
+
+        if event.key == "escape":
             ctx.set_state(None)
             return True
 
-        if key == "ctrl+h":
+        if event.key == "ctrl+h":
             search_bar = ctx.app.search_bar
             if search_bar:
                 search_bar.toggle_replace()
             return True
 
-        # ── Seta para baixo: mostra Replace e foca nele ───────────────
-        if key == "down":
-            search_bar = ctx.app.search_bar
-            if search_bar:
-                try:
-                    search_bar.show_replace()
-                    ctx.logs.debug(
-                        "(Search): Replace panel shown via ↓",
-                        action="SEARCH_SHOW_REPLACE",
-                    )
-                except Exception as e:
-                    ctx.errors.handle(
-                        e,
-                        action="SEARCH_SHOW_REPLACE",
-                        event_origin="key_down",
-                    )
-            return True
-
-        # ── Seta para cima: esconde Replace e volta foco ao Find ──────
-        if key == "up":
-            search_bar = ctx.app.search_bar
-            if search_bar:
-                try:
-                    search_bar.hide_replace()
-                    ctx.logs.debug(
-                        "(Search): Replace panel hidden via ↑",
-                        action="SEARCH_HIDE_REPLACE",
-                    )
-                except Exception as e:
-                    ctx.errors.handle(
-                        e,
-                        action="SEARCH_HIDE_REPLACE",
-                        event_origin="key_up",
-                    )
-            return True
-
         return False
 
     def handle_enter(self, ctx) -> bool:
-        """
-        Comportamento do Enter:
-        - Replace visível → executa replace_one() e depois next_match()
-        - Replace oculto  → vai para a próxima ocorrência
-        Também salva o termo atual no histórico.
-        """
-        self._save_to_history(ctx)
-
         search_bar = ctx.app.search_bar
-        replace_visible = False
-
-        if search_bar:
-            try:
-                replace_visible = bool(search_bar.replace_input.display)
-            except Exception as e:
-                ctx.logs.debug(
-                    f"(Search): Could not read replace_input.display — {e}",
-                    action="SEARCH_ENTER_CHECK_REPLACE",
-                )
+        replace_visible = (
+            search_bar is not None
+            and getattr(search_bar, "replace_input", None) is not None
+            and search_bar.replace_input.display
+        )
 
         if replace_visible:
             self.replace_one(ctx)
+            self.next_match(ctx)
         else:
             self.next_match(ctx)
 
         return True
 
     def handle_input(self, ctx, event):
-        if event.input.id == "search_input":
-            self._on_find_changed(ctx, event.value)
+        if not hasattr(event, "input") or not hasattr(event, "value"):
+            return
+
+        input_id = getattr(event.input, "id", None)
+        value    = event.value
+
+        if input_id == "search_input":
+            self._on_find_changed(ctx, value)
 
     ###==================== NAVIGATION ====================###
 
@@ -146,50 +126,13 @@ class SearchState(BaseState):
         self.current_match_index = (self.current_match_index - 1) % len(self.matches)
         self._go_to_match(ctx)
 
-    ###==================== HISTORY ====================###
-
-    def _save_to_history(self, ctx):
-        """
-        Salva o termo atual no histórico de buscas.
-        - Ignora termos vazios.
-        - Remove duplicata recente (mesmo termo já no topo não é re-inserido).
-        - Limita a _HISTORY_MAX entradas.
-        """
-        term = self.current_term.strip()
-        if not term:
-            return
-
-        try:
-            # Remove ocorrência anterior do mesmo termo (sem duplicatas)
-            if term in self.search_history:
-                self.search_history.remove(term)
-
-            self.search_history.insert(0, term)
-
-            # Garante tamanho máximo
-            if len(self.search_history) > _HISTORY_MAX:
-                self.search_history = self.search_history[:_HISTORY_MAX]
-
-            ctx.logs.debug(
-                f"(Search): Term added to history — \"{term}\" "
-                f"({len(self.search_history)} items)",
-                action="SEARCH_HISTORY_SAVE",
-            )
-
-        except Exception as e:
-            ctx.errors.handle(
-                e,
-                action="SEARCH_HISTORY_SAVE",
-                event_origin="handle_enter",
-            )
-
     ###==================== REPLACE ====================###
 
     def replace_one(self, ctx, replace_text: "str | None" = None):
         if replace_text is None:
             replace_text = self._get_replace_text(ctx)
             if replace_text is None:
-                return  # _get_replace_text já logou o problema
+                return
 
         if self.current_match_index < 0 or not self.matches:
             ctx.status.warning("(Search): No results")
@@ -317,14 +260,6 @@ class SearchState(BaseState):
         editor.replace(new_text, (0, 0), end_loc)
 
     def _get_replace_text(self, ctx) -> "str | None":
-        """
-        Lê o texto do widget replace_input.
-
-        Retorna a string (pode ser vazia se o usuário não digitou nada).
-        Retorna None se o widget não existe ou está desmontado —
-        neste caso loga WARNING e aborta o replace para evitar
-        deleção silenciosa de conteúdo.
-        """
         try:
             from textual.widgets import Input
             return ctx.app.query_one("#replace_input", Input).value

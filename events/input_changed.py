@@ -6,7 +6,8 @@ def handle(ctx, event):
     if not state:
         return
 
-    # Propaga mudanças tanto do search_input quanto do replace_input
-    if event.input.id in ("search_input", "replace_input"):
+    input_id = getattr(event.input, "id", None)
+
+    if input_id in ("search_input", "replace_input"):
         if hasattr(state, "handle_input"):
             state.handle_input(ctx, event)
