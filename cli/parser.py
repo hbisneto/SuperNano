@@ -3,8 +3,9 @@
 import sys
 from cli.models import CLIArgs
 
+
 def parse_cli_args() -> CLIArgs:
-    args = sys.argv[1:]
+    args   = sys.argv[1:]
     result = CLIArgs()
 
     i = 0
@@ -29,42 +30,71 @@ def parse_cli_args() -> CLIArgs:
             i += 1
             continue
 
-        if arg == "-C" and i + 1 < len(args):
-            result.backup_dir = args[i + 1]
-            i += 2
+        if arg in ("-C", "--backupdir"):
+            if i + 1 < len(args):
+                result.backup_dir = args[i + 1]
+                i += 2
+            else:
+                print(
+                    "supernanno: option '-C/--backupdir' requires an argument",
+                    file=sys.stderr,
+                )
+                result.invalid_arg = arg
+                return result
             continue
 
         if arg.startswith("--backupdir="):
             result.backup_dir = arg.split("=", 1)[1]
             i += 1
             continue
-        
-        if arg.startswith("--") and arg not in ("--help", "--version"):
+
+        if arg.startswith("+"):
+            # +LINE ou +LINE,COLUMN ou +/SEARCH
+            rest = arg[1:]
+
+            if rest.startswith("/"):
+                result.search = rest[1:]
+                i += 1
+                continue
+
+            if "," in rest:
+                line_str, col_str = rest.split(",", 1)
+                try:
+                    result.line = int(line_str)
+                except ValueError:
+                    print(
+                        f"supernanno: invalid line number '{line_str}' in argument '{arg}'",
+                        file=sys.stderr,
+                    )
+                    # Mantém line=None, não aborta a abertura do arquivo
+
+                try:
+                    result.column = int(col_str)
+                except ValueError:
+                    print(
+                        f"supernanno: invalid column number '{col_str}' in argument '{arg}'",
+                        file=sys.stderr,
+                    )
+                    result.column = 0  # Fallback seguro
+            else:
+                try:
+                    result.line = int(rest)
+                except ValueError:
+                    print(
+                        f"supernanno: invalid line number '{rest}' in argument '{arg}'",
+                        file=sys.stderr,
+                    )
+                    # Mantém line=None
+
+            i += 1
+            continue
+
+        if arg.startswith("-"):
             result.invalid_arg = arg
             return result
 
-        # supernanno +25,8 file.txt
-        if arg.startswith("+"):
-            position = arg[1:]
-            if position.startswith("/"):
-                result.search = position[1:]
-            else:
-                if "," in position:
-                    try:
-                        line_str, col_str = position.split(",", 1)
-                        result.line = int(line_str)
-                        result.column = int(col_str)
-                    except ValueError:
-                        pass
-                else:
-                    try:
-                        result.line = int(position)
-                    except ValueError:
-                        pass
-        else:
-            # É o nome do arquivo
-            result.file = arg
-
+        # Arquivo posicional
+        result.file = arg
         i += 1
 
     return result

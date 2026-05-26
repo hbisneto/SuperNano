@@ -13,14 +13,16 @@ from services.config_manager import ConfigManager
 from services.issue_service import IssueService
 from services.log_service import LogService
 from services.session_manager import SessionManager
+from core.__version__ import VERSION
+
 
 class AppContext:
 
     def __init__(self, app):
         self.app = app
 
-        self.current_path: Path | None = None
-        self.state = None
+        self.current_path: "Path | None" = None
+        self.state        = None
         self.pending_action = None
 
         # ==================== SETTINGS ====================
@@ -28,37 +30,42 @@ class AppContext:
         self.config_watcher_interval = 1
         self.restore_session         = True
         self.backup_enabled          = False
-        self.backup_dir: Path | None = None
+        self.backup_dir: "Path | None" = None
         self.read_only               = False
         self.path_display            = "full"
         self.debug_mode              = False
 
         # ==================== SERVICES ====================
-        self.editor_state    = EditorState()
-        self.file_manager    = FileManager()
-        self.status          = StatusService(self, debug=True)
-        self.config          = ConfigManager()
-        self.session         = SessionManager(
+        self.editor_state   = EditorState()
+        self.file_manager   = FileManager()
+        self.status         = StatusService(self, debug=True)
+        self.config         = ConfigManager()
+        self.session        = SessionManager(
             create_if_missing=not getattr(app, "explicit_file_open", False)
         )
-        self.config_applier  = ConfigApplier(self)
+        self.config_applier = ConfigApplier(self)
 
-        # Logging
-        self.logger = Logger(paths.get_logs_dir())
+        # Logging — Logger instanciado com versão para enriquecer entradas
+        self.logger = Logger(paths.get_logs_dir(), app_version=VERSION)
         self.logs   = LogService(self)
         self.errors = ErrorService(self)
 
         # Issue reporting
         self.issue  = IssueService(self)
 
-        # Last exception state
-        self.last_exception:      str | None      = None
-        self.last_exception_type: str | None      = None
-        self.last_exception_time: object | None   = None
+        # ─── Estado da última exceção (alimentado pelo ErrorService) ───
+        self.last_exception:      "str | None"    = None
+        self.last_exception_type: "str | None"    = None
+        self.last_exception_time: "object | None" = None
+        self.last_correlation_id: "str | None"    = None
+        self.last_error_category: "str | None"    = None
+        self.last_error_labels:   "str | None"    = None
+        self.last_fingerprint:    "str | None"    = None
 
         # Stats
         self.word_count = 0
         self.char_count = 0
+        self.line_count = 0
         self.file_size  = 0
         self.encoding   = "UTF-8"
         self.eol        = "LF"
@@ -105,7 +112,12 @@ class AppContext:
             row, col = self.editor.cursor_location
             row += 1
             col += 1
-        except Exception:
+        except Exception as e:
+            # cursor_location pode falhar se o widget ainda não está pronto
+            self.logs.debug(
+                f"(AppContext): cursor_location unavailable — {e}",
+                action="GET_DEFAULT_STATUS",
+            )
             row, col = 1, 1
 
         stats_parts = []
@@ -157,10 +169,17 @@ class AppContext:
         ext = path.suffix.lower()
 
         language_map = {
-            ".c": "c", ".cpp": "cpp", ".cs": "csharp",
-            ".css": "css", ".html": "html", ".js": "javascript",
-            ".json": "json", ".md": "markdown", ".py": "python",
-            ".sh": "bash", ".ts": "typescript",
+            ".c":    "c",
+            ".cpp":  "cpp",
+            ".cs":   "csharp",
+            ".css":  "css",
+            ".html": "html",
+            ".js":   "javascript",
+            ".json": "json",
+            ".md":   "markdown",
+            ".py":   "python",
+            ".sh":   "bash",
+            ".ts":   "typescript",
         }
 
         editor = self.editor
@@ -168,20 +187,39 @@ class AppContext:
 
         try:
             editor.language = lang
-        except Exception:
-            editor.language = None
+        except Exception as e:
+            self.logs.debug(
+                f"(AppContext): Could not set language '{lang}' for '{path.suffix}' — {e}",
+                action="SET_LANGUAGE",
+                path=path,
+            )
+            try:
+                editor.language = None
+            except Exception:
+                pass
 
-        if not editor.language:
+        if not getattr(editor, "language", None):
             try:
                 lexer = guess_lexer(editor.text[:1000])
                 alias = lexer.aliases[0] if lexer.aliases else None
                 editor.language = alias
-            except Exception:
-                editor.language = None
+            except Exception as e:
+                self.logs.debug(
+                    f"(AppContext): Pygments lexer detection failed — {e}",
+                    action="SET_LANGUAGE_PYGMENTS",
+                    path=path,
+                )
+                try:
+                    editor.language = None
+                except Exception:
+                    pass
 
-        editor.refresh()
+        try:
+            editor.refresh()
+        except Exception:
+            pass
 
-    def save_session_state(self, file_path: Path | str):
+    def save_session_state(self, file_path: "Path | str"):
         if getattr(self.app, "explicit_file_open", False) or not file_path:
             return
         self.session.set_last_file(str(file_path))
@@ -203,12 +241,12 @@ class AppContext:
     def sidebar(self):
         return getattr(self.app, "sidebar", None)
 
-    def goto_line_column(self, line: int | None, column: int = 0):
+    def goto_line_column(self, line: "int | None", column: int = 0):
         if line is None:
             return
 
-        row = max(0, line - 1)
-        col = max(0, column)
+        row    = max(0, line - 1)
+        col    = max(0, column)
         editor = self.editor
 
         try:
@@ -220,14 +258,25 @@ class AppContext:
                     editor.scroll_to(x=0, animate=False)
                     if hasattr(editor, "scroll_x"):
                         editor.scroll_x = 0
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.logs.debug(
+                        f"(AppContext): reset_horizontal_scroll failed — {e}",
+                        action="GOTO_LINE_COLUMN_SCROLL",
+                    )
 
             self.app.call_after_refresh(reset_horizontal_scroll)
 
-        except Exception:
+        except Exception as e:
+            self.logs.warning(
+                f"(AppContext): goto_line_column({line}, {column}) failed "
+                f"at ({row},{col}), retrying at ({row},0) — {e}",
+                action="GOTO_LINE_COLUMN",
+            )
             try:
                 editor.cursor_location = (row, 0)
                 editor.scroll_to(y=row, x=0, animate=False)
-            except Exception:
-                pass
+            except Exception as e2:
+                self.logs.warning(
+                    f"(AppContext): goto_line_column fallback also failed — {e2}",
+                    action="GOTO_LINE_COLUMN_FALLBACK",
+                )
