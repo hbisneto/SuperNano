@@ -2,7 +2,7 @@
 
 def handle(ctx, event):
     state = ctx.state
-    
+
     if ctx.app.in_startup:
         ctx.app.startup_view.display = False
         ctx.app.editor.display = True
@@ -15,6 +15,7 @@ def handle(ctx, event):
         ctx.app.in_startup = False
         return
 
+    # ── Delega para o estado ativo (inclui ↑/↓ capturados pelo SearchState) ──
     if state and hasattr(state, "handle_key"):
         if state.handle_key(ctx, event):
             return

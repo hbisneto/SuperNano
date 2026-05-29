@@ -36,3 +36,6 @@ def get_logs_dir() -> Path:
 
 def get_plugins_dir() -> Path:
     return get_app_dir() / "Plugins"
+
+def get_issues_dir() -> Path:
+    return get_app_dir() / "Issues"
