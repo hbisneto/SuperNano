@@ -1,6 +1,9 @@
 # app.py
 
 import asyncio
+import os
+import platform
+import subprocess
 import sys
 from cli.constants import HELP_TEXT
 from cli.constants import VERSION
@@ -252,6 +255,27 @@ class SuperNanno(App):
         self.ctx.status.persist("(Path): Enter path to save file")
 
 
+
+
+    def test(self):
+        # Método de teste para desenvolvimento
+        print("=" * 80)
+        print("[SuperNanno Test()]: Running SuperNanno tests...")
+        print("=" * 80)
+
+        # [TESTE DE LEITURA DO ARQUIVO .supernannorc]: (Reproduzindo comportamento)
+        snrc_exists = False
+
+        if not snrc_exists:
+            WIDTH = 130
+            HEIGHT = 41
+
+            sys.stdout.write(f"\033[8;{HEIGHT};{WIDTH}t")
+            sys.stdout.flush()
+
+        return None
+
+
 def main():
     cli_args = parse_cli_args()
     if cli_args.help:
@@ -269,4 +293,6 @@ def main():
 
 
 if __name__ == "__main__":
+    app = SuperNanno()
+    app.test()  # Executa testes antes de iniciar o app
     main()
