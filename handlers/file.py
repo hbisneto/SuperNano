@@ -39,7 +39,8 @@ def _do_new(ctx):
 def open(ctx):
     input_w = ctx.app.query_one("#path_input", Input)
     input_w.display = True
-    input_w.value = str(Path(".").absolute()) + "/"
+    # input_w.value = str(Path(".").absolute()) + "/"
+    input_w.value = str(Path.home()) + "/"
     input_w.focus()
 
     ctx.app.input_mode = "open"

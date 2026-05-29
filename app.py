@@ -1,6 +1,9 @@
 # app.py
 
 import asyncio
+# import os
+# import platform
+# import subprocess
 import sys
 from cli.constants import HELP_TEXT
 from cli.constants import VERSION
@@ -251,6 +254,23 @@ class SuperNanno(App):
         self.input_mode = "save"
         self.ctx.status.persist("(Path): Enter path to save file")
 
+    def __test__(self):
+        # Método de teste para desenvolvimento
+        print("=" * 80)
+        print("[SuperNanno Test()]: Running SuperNanno tests...")
+        print("=" * 80)
+
+        ### [TESTE DE LEITURA DO ARQUIVO .supernannorc]: (Reproduzindo comportamento) ###
+        snrc_exists = True # Se o arquivo existir, verifica os valores de width e height. 
+
+        # Se não existir, simula a criação do arquivo e a configuração do terminal.
+        if not snrc_exists:
+            WIDTH = 128
+            HEIGHT = 32
+
+            sys.stdout.write(f"\033[8;{HEIGHT};{WIDTH}t")
+            sys.stdout.flush()
+        print("[SUPERNANNO TEST]: .supernannorc file existence check passed (simulated)")
 
 def main():
     cli_args = parse_cli_args()
@@ -269,4 +289,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # app = SuperNanno()
+    # app.test()  # Executa testes antes de iniciar o app
     main()
