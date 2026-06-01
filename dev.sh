@@ -85,8 +85,7 @@ case "$choice" in
         pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
 
         pipx install \
-            --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple \
+            --pip-args="--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple" \
             "$PACKAGE_NAME"
 
         echo "✅ Installed latest version from TestPyPI."
@@ -100,8 +99,7 @@ case "$choice" in
         pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
 
         pipx install \
-            --index-url https://test.pypi.org/simple/ \
-            --extra-index-url https://pypi.org/simple \
+            --pip-args="--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple" \
             "$PACKAGE_NAME==$version"
 
         echo "✅ Installed version $version from TestPyPI."
