@@ -24,15 +24,9 @@ SETTINGS_BINDINGS = [
 WELCOME = f"""\
 # SuperNanno {VERSION.VERSION}
 
-# SuperNanno
-
 **Nano, but modern.**
 
 A powerful, modern terminal text editor built for real developer workflows.
-
-![SuperNanno](https://img.shields.io/badge/Version-0.0.23-%2300e5b0)
-![Python](https://img.shields.io/badge/Python-3.10%2B-%233577a4)
-![License](https://img.shields.io/badge/License-BSD--3--Clause-%2300e5b0)
 
 ---
 
