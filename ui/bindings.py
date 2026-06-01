@@ -24,71 +24,178 @@ SETTINGS_BINDINGS = [
 WELCOME = f"""\
 # SuperNanno {VERSION.VERSION}
 
-> A modern, extensible terminal-based text editor.
+# SuperNanno
 
+**Nano, but modern.**
 
-Welcome to SuperNanno — a modern, extensible terminal-based text editor.
+A powerful, modern terminal text editor built for real developer workflows.
 
-SuperNanno is designed to be simple on the surface, yet powerful under the hood.
-It combines a clean editing experience with a modular architecture that allows
-features like search, file handling, and future extensions through plugins.
+![SuperNanno](https://img.shields.io/badge/Version-0.0.23-%2300e5b0)
+![Python](https://img.shields.io/badge/Python-3.10%2B-%233577a4)
+![License](https://img.shields.io/badge/License-BSD--3--Clause-%2300e5b0)
 
-Whether you're editing quick notes or building more complex workflows,
-SuperNanno aims to stay fast, predictable, and distraction-free.
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# About SuperNanno
 
-🧠 Core Concepts
+**SuperNanno** is a modern terminal-based text editor inspired by Nano, rebuilt from the ground up with contemporary tools and best practices.
 
-• Minimal UI, maximum focus  
-  A distraction-free editor that keeps your attention on the text.
+Built in **Python** using the **Textual** framework and **Tree-sitter** for fast, accurate syntax highlighting, it delivers a rich feature set while maintaining the speed and lightness of a terminal application.
 
-• Stateful interactions  
-  Features like search operate through controlled states, ensuring consistency.
+### Key Features
 
-• Extensible by design  
-  Built with a plugin system in mind — allowing future customization of behavior.
+- **Full-featured editor** with advanced cursor, selection, and smooth scrolling
+- **High-performance Syntax Highlighting** powered by **Tree-sitter** (16 languages) with intelligent Pygments fallback
+- **Robust File Manager** with atomic writes and comprehensive encoding handling
+- **Advanced Search Engine** using Strategy Pattern (literal, case-sensitive, regex)
+- **Session Manager** with reliable persistence and automatic restoration
+- **Automatic Backup System** with configurable directory
+- **Structured JSON Logging** with correlation IDs for observability
+- **Diagnostic Service** and integrated **Report Service** for GitHub
+- **Sidebar File Explorer** with click-to-open navigation
+- **Real-time Async Config Watcher**
+- **Intelligent Status Bar** with multiple visual levels
+- **Modern UI** with mouse support and intuitive keybindings
 
-• Cross-platform terminal experience  
-  Works anywhere your terminal works.
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Installation
 
-⌨️ Keyboard Shortcuts
+### Development Setup (Recommended)
 
-CTRL + B   Toggle Sidebar  
-CTRL + N   New File  
-CTRL + O   Open File  
-CTRL + S   Save File  
-CTRL + R   Read file (insert content)  
-CTRL + F   Search Text  
-CTRL + Q   Quit Editor  
-F1         Open Settings  
+```bash
+git clone https://github.com/hbisneto/SuperNanno.git
+cd SuperNanno
+bash dev.sh
+python app.py
+```
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The `dev.sh` script automatically handles:
 
-🚀 Getting Started
+- Virtual environment creation
+- Dependency installation
+- Initial project setup
 
-• Press CTRL + O to open a file  
-• Press CTRL + N to start a new file  
-• Start typing to edit immediately  
+### Via PyPI (Coming Soon)
 
-Use CTRL + F to search within your document.
+```bash
+pip install supernanno
+```
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-🔌 Future Vision
+# Usage
 
-SuperNanno is evolving toward a fully extensible editor:
+```bash
+# Open a file
+supernanno my_file.py
 
-• Plugin system for custom behaviors  
-• Advanced search strategies (regex, fuzzy, etc.)  
-• Automation and workflow extensions  
-• UI enhancements and customization  
+# Open at specific line
+supernanno +42 main.py
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Open and search for term
+supernanno +/TODO app.py
 
-Start typing to begin.
+# Read-only mode
+supernanno -v config.json
+
+# With backup enabled
+supernanno -B -C ~/backups/ project.py
+```
+
+---
+
+# Keyboard Shortcuts
+
+| Shortcut          | Action                          |
+|-------------------|---------------------------------|
+| `Ctrl + N`        | New file                        |
+| `Ctrl + O`        | Open file                       |
+| `Ctrl + S`        | Save file                       |
+| `Ctrl + F`        | Search                          |
+| `Ctrl + H`        | Replace All                     |
+| `Ctrl + B`        | Toggle Sidebar                  |
+| `Ctrl + R`        | Insert file at cursor           |
+| `F1`              | Open Settings                   |
+| `Ctrl + X`        | Generate Diagnostic Report      |
+| `Ctrl + Q`        | Quit (with unsaved protection)  |
+
+---
+
+# Configuration
+
+SuperNanno is highly configurable via the `.supernannorc` file:
+
+```bash
+set backup
+set backupdir ~/.config/Bisneto/SuperNanno/Backup
+set restoresession
+set sidebar
+set tabsize 4
+set indenttype spaces
+```
+
+Advanced settings are available in `config.json`.
+
+---
+
+# Architecture
+
+SuperNanno was designed with a clean, professional, and maintainable architecture:
+
+- **Event-driven** design with robust **State Management**
+- **AppContext** as the central facade
+- Clear separation of concerns (`core`, `services`, `handlers`, `ui`, `events`)
+- Structured logging and diagnostic infrastructure
+- UI-independent unit tests
+
+Built for long-term maintainability and extensibility.
+
+---
+
+# Configuration Directories
+
+- **Linux**: `~/.config/Bisneto/SuperNanno/`
+- **macOS**: `~/Library/Application Support/Bisneto/SuperNanno/`
+- **Windows**: `%APPDATA%\Bisneto\SuperNanno\`
+
+---
+
+# Privacy
+
+SuperNanno was built with **privacy as a core principle**:
+
+- Primarily operates offline
+- No unnecessary data collection
+- No automatic transmission to external servers
+- All logs, sessions, and configurations remain local
+
+[Read the full Privacy Policy](privacy.html)
+
+---
+
+# Contributing
+
+Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+# License
+
+**BSD-3-Clause License**
+
+Copyright © 2026 Heitor Bardemaker A. Bisneto
+
+---
+
+# Acknowledgments
+
+- [Textual](https://github.com/Textualize/textual) — Outstanding TUI framework
+- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) — High-performance parsing and highlighting
+
+---
+
+**Built with care for developers who ❤️ the terminal.**
 """
 
 IS_WELCOME_TEXT = WELCOME.strip()

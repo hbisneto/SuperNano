@@ -1,44 +1,56 @@
 # SuperNanno
 
-> Nano, but modern. With UI, syntax highlighting, and a real developer workflow
+**Nano, but modern.**
 
-A modern terminal-based text editor inspired by nano.
+A powerful, modern terminal text editor built for real developer workflows.
 
-SuperNanno combines simplicity with powerful editing features, providing a clean and efficient editing experience directly in your terminal.
-
----
-
-## 🚀 Features
-
-* 📝 Full text editing with cursor and selection support
-* 📂 Open files via CLI, sidebar, or manual path input
-* 💾 Save & Save As support
-* 🔍 Search inside files (`CTRL + F`)
-* 📥 Insert file into current document (`CTRL + R`)
-* ♻️ Session restore (reopens last file automatically)
-* ⚠️ Unsaved changes protection
-* 🎨 Syntax highlighting (based on file type)
-* 📊 Smart status bar (file name, language, encoding, state)
-* 📁 Sidebar file explorer
+![SuperNanno](https://img.shields.io/badge/Version-0.0.23-%2300e5b0)
+![Python](https://img.shields.io/badge/Python-3.10%2B-%233577a4)
+![License](https://img.shields.io/badge/License-BSD--3--Clause-%2300e5b0)
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+# About SuperNanno
 
-| Shortcut   | Action                |
-| ---------- | --------------------- |
-| `CTRL + O` | Open file             |
-| `CTRL + R` | Insert file at cursor |
-| `CTRL + S` | Save file             |
-| `CTRL + N` | New file              |
-| `CTRL + F` | Search                |
-| `CTRL + Q` | Quit                  |
+**SuperNanno** is a modern terminal-based text editor inspired by Nano, rebuilt from the ground up with contemporary tools and best practices.
+
+Built in **Python** using the **Textual** framework and **Tree-sitter** for fast, accurate syntax highlighting, it delivers a rich feature set while maintaining the speed and lightness of a terminal application.
+
+### Key Features
+
+- **Full-featured editor** with advanced cursor, selection, and smooth scrolling
+- **High-performance Syntax Highlighting** powered by **Tree-sitter** (16 languages) with intelligent Pygments fallback
+- **Robust File Manager** with atomic writes and comprehensive encoding handling
+- **Advanced Search Engine** using Strategy Pattern (literal, case-sensitive, regex)
+- **Session Manager** with reliable persistence and automatic restoration
+- **Automatic Backup System** with configurable directory
+- **Structured JSON Logging** with correlation IDs for observability
+- **Diagnostic Service** and integrated **Report Service** for GitHub
+- **Sidebar File Explorer** with click-to-open navigation
+- **Real-time Async Config Watcher**
+- **Intelligent Status Bar** with multiple visual levels
+- **Modern UI** with mouse support and intuitive keybindings
 
 ---
 
-## 📦 Installation
+# Installation
 
-Coming soon via PyPI:
+### Development Setup (Recommended)
+
+```bash
+git clone https://github.com/hbisneto/SuperNanno.git
+cd SuperNanno
+bash dev.sh
+python app.py
+```
+
+The `dev.sh` script automatically handles:
+
+- Virtual environment creation
+- Dependency installation
+- Initial project setup
+
+### Via PyPI (Coming Soon)
 
 ```bash
 pip install supernanno
@@ -46,54 +58,115 @@ pip install supernanno
 
 ---
 
-## ▶️ Usage
+# Usage
 
 ```bash
-supernanno file.txt
+# Open a file
+supernanno my_file.py
+
+# Open at specific line
+supernanno +42 main.py
+
+# Open and search for term
+supernanno +/TODO app.py
+
+# Read-only mode
+supernanno -v config.json
+
+# With backup enabled
+supernanno -B -C ~/backups/ project.py
 ```
 
-Or simply:
+---
+
+# Keyboard Shortcuts
+
+| Shortcut          | Action                          |
+|-------------------|---------------------------------|
+| `Ctrl + N`        | New file                        |
+| `Ctrl + O`        | Open file                       |
+| `Ctrl + S`        | Save file                       |
+| `Ctrl + F`        | Search                          |
+| `Ctrl + H`        | Replace All                     |
+| `Ctrl + B`        | Toggle Sidebar                  |
+| `Ctrl + R`        | Insert file at cursor           |
+| `F1`              | Open Settings                   |
+| `Ctrl + X`        | Generate Diagnostic Report      |
+| `Ctrl + Q`        | Quit (with unsaved protection)  |
+
+---
+
+# Configuration
+
+SuperNanno is highly configurable via the `.supernannorc` file:
 
 ```bash
-supernanno
+set backup
+set backupdir ~/.config/Bisneto/SuperNanno/Backup
+set restoresession
+set sidebar
+set tabsize 4
+set indenttype spaces
 ```
 
----
-
-## ⚙️ Session Restore
-
-SuperNanno automatically restores your last opened file using a local configuration file:
-
-```json
-{
-  "session": {
-    "last_opened_file": "/path/to/file"
-  }
-}
-```
+Advanced settings are available in `config.json`.
 
 ---
 
-## 🧠 Philosophy
+# Architecture
 
-SuperNanno is built with a simple idea:
+SuperNanno was designed with a clean, professional, and maintainable architecture:
 
-> Be as simple as nano, but flexible enough to grow into a modern terminal editor.
+- **Event-driven** design with robust **State Management**
+- **AppContext** as the central facade
+- Clear separation of concerns (`core`, `services`, `handlers`, `ui`, `events`)
+- Structured logging and diagnostic infrastructure
+- UI-independent unit tests
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
----
-
-## 📜 License
-
-MIT License
+Built for long-term maintainability and extensibility.
 
 ---
 
-## ⭐ Support
+# Configuration Directories
 
-If you like this project, consider giving it a star on GitHub!
+- **Linux**: `~/.config/Bisneto/SuperNanno/`
+- **macOS**: `~/Library/Application Support/Bisneto/SuperNanno/`
+- **Windows**: `%APPDATA%\Bisneto\SuperNanno\`
+
+---
+
+# Privacy
+
+SuperNanno was built with **privacy as a core principle**:
+
+- Primarily operates offline
+- No unnecessary data collection
+- No automatic transmission to external servers
+- All logs, sessions, and configurations remain local
+
+[Read the full Privacy Policy](privacy.html)
+
+---
+
+# Contributing
+
+Contributions are welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+# License
+
+**BSD-3-Clause License**
+
+Copyright © 2026 Heitor Bardemaker A. Bisneto
+
+---
+
+# Acknowledgments
+
+- [Textual](https://github.com/Textualize/textual) — Outstanding TUI framework
+- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) — High-performance parsing and highlighting
+
+---
+
+**Built with care for developers who ❤️ the terminal.**
