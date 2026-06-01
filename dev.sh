@@ -52,30 +52,62 @@ echo ""
 
 echo "How would you like to install SuperNanno?"
 echo ""
-echo "1) Local Development (editable)  ← Recommended for contributors"
-echo "2) Latest version from PyPI"
-echo "3) Specific version from PyPI"
+echo "1) Stable Channel          ← Recommended"
+echo "2) Local Developer Mode          ← editable"
+echo "3) Dev Channel"
+echo "4) Specific Dev Version"
+echo "5) Specific Stable Version"
 echo ""
-read -p "Choose an option [1-3]: " -r choice
+read -p "Choose an option [1-5]: " -r choice
 
 echo ""
 
 case "$choice" in
+    # NORMAL INSTALLATIONS
     1)
-        echo "⚙️  Installing in LOCAL DEVELOPMENT mode (editable)..."
-        pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
-        pipx install --editable .
-        echo "✅ Installed in editable mode from local source."
-        ;;
-    
-    2)
         echo "📦 Installing latest version from PyPI..."
         pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
         pipx install "$PACKAGE_NAME"
         echo "✅ Installed latest version from PyPI."
         ;;
     
+    # DEVELOPMENT INSTALLATION
+    2)
+        echo "⚙️  Installing in LOCAL DEVELOPMENT mode (editable)..."
+        pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
+        pipx install --editable .
+        echo "✅ Installed in editable mode from local source."
+        ;;
+
+    # TESTPYPI INSTALLATIONS
     3)
+        echo "📦 Installing latest version from TestPyPI..."
+        pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
+
+        pipx install \
+            --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple \
+            "$PACKAGE_NAME"
+
+        echo "✅ Installed latest version from TestPyPI."
+        ;;
+
+    # PYPI INSTALLATIONS
+    4)
+        read -p "Enter version (ex: 0.0.23): " -r version
+
+        echo "📦 Installing version $version from TestPyPI..."
+        pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
+
+        pipx install \
+            --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple \
+            "$PACKAGE_NAME==$version"
+
+        echo "✅ Installed version $version from TestPyPI."
+        ;; 
+
+    5)
         read -p "Enter version (ex: 0.0.23): " -r version
         echo "📦 Installing version $version from PyPI..."
         pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
