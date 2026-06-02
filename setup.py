@@ -81,7 +81,7 @@ setup(
     
     entry_points={
         "console_scripts": [
-            "supernanno = app:main",
+            "supernanno=supernanno.app:main",
         ],
     },
     
