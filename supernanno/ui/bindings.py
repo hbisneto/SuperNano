@@ -1,12 +1,32 @@
-# SuperNanno
+# ui/bindings.py
+
+from ..core import __version__ as VERSION
+
+CSS_FILE = "style.tcss"
+
+BINDINGS = [
+    ("ctrl+b", "show_hide_sidebar", "Show/Hide Sidebar"),
+    ("ctrl+n", "new_file", "New"),
+    ("ctrl+o", "open_path", "Open"),
+    ("ctrl+s", "save", "Save"),
+    ("ctrl+r", "read_file", "Read File"),
+    ("ctrl+f", "search", "Search"),
+    ("ctrl+q", "quit", "Quit"),
+    ("ctrl+x", "report_issue", "Report Issue"),
+    ("f1", "show_settings", "Settings"),
+]
+
+SETTINGS_BINDINGS = [
+    ("escape", "dismiss", "Close"),
+    ("ctrl+s", "save", "Save Settings"),
+]
+
+WELCOME = f"""\
+# SuperNanno {VERSION.VERSION}
 
 **Nano, but modern.**
 
 A powerful, modern terminal text editor built for real developer workflows.
-
-![SuperNanno](https://img.shields.io/badge/Version-0.0.23-%2300e5b0)
-![Python](https://img.shields.io/badge/Python-3.10%2B-%233577a4)
-![License](https://img.shields.io/badge/License-BSD--3--Clause-%2300e5b0)
 
 ---
 
@@ -170,3 +190,6 @@ Copyright © 2026 Heitor Bardemaker A. Bisneto
 ---
 
 **Built with care for developers who ❤️ the terminal.**
+"""
+
+IS_WELCOME_TEXT = WELCOME.strip()
