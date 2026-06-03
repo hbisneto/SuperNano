@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="supernanno",
-    version="0.0.0",
+    version="0.0.5",
     url="https://github.com/hbisneto/SuperNanno",
     license="BSD-3-Clause",
     

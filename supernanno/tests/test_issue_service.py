@@ -1,12 +1,4 @@
 # tests/test_issue_service.py
-#
-# Testes unitários para o sistema de report refatorado.
-# Necessário pytest: pip install pytest
-# Execute com: python -m pytest tests/test_issue_service.py -v
-# pytest tests/test_issue_service.py -v                                            
-#
-# Nota: esses testes não dependem do Textual/app rodando.
-# Usam mocks simples inline para simular ctx e logger.
 
 import json
 import os
@@ -31,7 +23,7 @@ from ..services.issue_service import (
 )
 
 def _make_ctx(*, with_exception: bool = True, with_logs: bool = True) -> MagicMock:
-    """Cria um mock de AppContext suficientemente completo para os testes."""
+    """Create a mock AppContext with enough properties for testing."""
     ctx = MagicMock()
 
     if with_exception:
@@ -90,11 +82,9 @@ def _make_ctx(*, with_exception: bool = True, with_logs: bool = True) -> MagicMo
     ctx.config.config_path = mock_config_path
     ctx.config.rc_path = mock_rc_path
     ctx.config.data = {"debug": False}
-
     return ctx
 
 class TestLogExcerptFormatter:
-
     def test_format_line_json(self):
         f = LogExcerptFormatter()
         raw = json.dumps({
@@ -160,7 +150,6 @@ class TestLogExcerptFormatter:
         assert "ACTION_0"  not in result
 
 class TestIssueReportBuilder:
-
     def _make_diag(self) -> DiagnosticContext:
         ctx  = _make_ctx()
         return DiagnosticContext(ctx)
@@ -231,7 +220,6 @@ class TestIssueReportBuilder:
         assert len(body) <= 500
 
 class TestGitHubIssueFormatter:
-
     def _make_diag(self) -> DiagnosticContext:
         return DiagnosticContext(_make_ctx())
 
@@ -262,7 +250,6 @@ class TestGitHubIssueFormatter:
         assert labels == "bug"
 
 class TestGitHubReportProvider:
-
     def test_url_body_encoded(self):
         provider = GitHubReportProvider()
         url      = provider.build_url("My Title", "My Body", labels="bug")
@@ -271,7 +258,7 @@ class TestGitHubReportProvider:
         assert "bug" in url
 
     def test_url_never_contains_raw_json_object(self):
-        """A URL nunca deve conter o payload JSON bruto de um log entry."""
+        """The URL should never contain the raw JSON payload of a log entry."""
         provider = GitHubReportProvider()
         body     = (
             "## Bug\n\n"
@@ -300,7 +287,6 @@ class TestGitHubReportProvider:
         assert "github.com" in opened_urls[0]
 
 class TestDiagnosticBundleService:
-
     def test_bundle_created_and_valid_zip(self):
         ctx    = _make_ctx()
         diag   = DiagnosticContext(ctx)
@@ -372,7 +358,7 @@ class TestDiagnosticBundleService:
             assert "editor_state"         in meta
 
     def test_bundle_fails_gracefully_on_permission_error(self):
-        """Bundle deve retornar None sem crashar quando não pode gravar."""
+        """Bundle should return None without crashing when it cannot write."""
         ctx  = _make_ctx()
         diag = DiagnosticContext(ctx)
 
@@ -396,7 +382,6 @@ class TestDiagnosticBundleService:
             assert "abc12345" in bundle_path.name
 
 class TestIssueService:
-
     def test_open_report_no_exception_does_nothing(self):
         ctx = _make_ctx(with_exception=False)
 
@@ -451,9 +436,8 @@ class TestIssueService:
         assert len(url) < 8_000, f"URL too long: {len(url)} chars"
 
     def test_open_report_survives_bundle_failure(self):
-        """Report deve funcionar mesmo se o bundle falhar."""
+        """Report should still work even if the bundle generation fails."""
         ctx = _make_ctx()
-
         opened = []
 
         class CapturingProvider(GitHubReportProvider):
@@ -504,7 +488,6 @@ class TestIssueService:
         assert len(opened) == 0
 
 class TestDiagnosticContext:
-
     def test_log_excerpt_is_human_readable(self):
         ctx  = _make_ctx()
         diag = DiagnosticContext(ctx)

@@ -33,7 +33,9 @@ print_header() {
 
 check_pipx() {
     if ! command -v pipx &> /dev/null; then
-        echo "❌ pipx is not installed."
+        echo "$UI_SEP"
+        echo "❌ [PIPX Not Available]: pipx is not installed."
+        echo "$UI_SEP"
         echo ""
         echo "Install it with:"
         echo "   python3 -m pip install --user pipx"
@@ -41,7 +43,9 @@ check_pipx() {
         echo ""
         exit 1
     fi
-    echo "✅ pipx is available"
+    echo "$UI_SEP"
+    echo "✅ [PIPX]: pipx is installed."
+    echo "$UI_SEP"
 }
 
 # =================================== Main ===================================
