@@ -1,3 +1,7 @@
+/* =============================================================================
+   SuperNanno — Style
+   ============================================================================= */
+
 $primary: #7c84ec;
 $accent: #454990;
 $background: #1F1F1F;
@@ -12,7 +16,7 @@ $muted: #94a3b8;
     scrollbar-color-active: $primary;
 }
 
-#editor{
+#editor {
     height: 1fr;
     width: 100%;
     margin-right: 0;
@@ -46,7 +50,7 @@ $muted: #94a3b8;
     background: $background;
 }
 
-#main > Vertical:last-child {   /* status */
+#main > Vertical:last-child {
     height: 1;
 }
 
@@ -96,21 +100,10 @@ $muted: #94a3b8;
     padding-left: 1;
 }
 
-#status.success {
-    background: #22c55e;
-}
-
-#status.warning {
-    background: #f59e0b;
-}
-
-#status.info {
-    background: #0d6efd;
-}
-
-#status.error {
-    background: #ef4444;
-}
+#status.success { background: #22c55e; }
+#status.warning { background: #f59e0b; }
+#status.info    { background: #0d6efd; }
+#status.error   { background: #ef4444; }
 
 .title {
     background: #454990;
@@ -125,31 +118,12 @@ DirectoryTree {
     scrollbar-gutter: stable;
 }
 
-DirectoryTree .folder {
-    color: #22c55e;
-    text-style: bold;
-}
+DirectoryTree .folder { color: #22c55e; text-style: bold; }
+DirectoryTree .file   { color: #60a5fa; }
+DirectoryTree .hidden { color: $muted; text-style: italic; }
 
-DirectoryTree .file {
-    color: #60a5fa;
-}
-
-DirectoryTree .hidden {
-    color: $muted;
-    text-style: italic;
-}
-
-Footer {
-    background: $background;
-    color: $muted;
-}
-
-Header {
-    background: $surface;
-    color: $text;
-}
-
-Horizontal {}
+Footer  { background: $background; color: $muted; }
+Header  { background: $surface;    color: $text; }
 
 Input {
     background: $background;
@@ -161,21 +135,9 @@ Input:focus {
     border: tall $primary;
 }
 
-ListItem {
-    color: $text;
-}
-
-ListItem.--highlight {
-    background: $primary;
-    color: $background;
-}
-
-ListItem:focus {
-    background: $accent;
-    color: $background;
-}
-
-ListView {}
+ListItem { color: $text; }
+ListItem.--highlight { background: $primary; color: $background; }
+ListItem:focus { background: $accent; color: $background; }
 
 Screen {
     background: $background;
@@ -198,8 +160,165 @@ TextArea {
     scrollbar-gutter: stable;
 }
 
-Toast {
+Toast { margin-bottom: 1; }
+
+/* =============================================================================
+   SETTINGS UI — Style
+   ============================================================================= */
+
+#btn_cancel {
+    background: $background;
+    color: $muted;
+    border: tall $muted;
+}
+
+#btn_cancel:hover {
+    color: $text;
+    border: tall $muted;
+}
+
+#btn_save {
+    background: $primary;
+    color: $surface;
+    text-style: bold;
+    border: none;
+}
+
+#btn_save:hover {
+    background: $accent;
+    color: $text;
+}
+
+#settings_actions {
+    height: 3;
+    background: $surface;
+    border-top: tall $accent;
+    align: center middle;
+    padding: 0 2;
+}
+
+#settings_actions Button {
+    margin: 0 1;
+    min-width: 12;
+}
+
+#settings_heading {
+    background: $accent;
+    color: $text;
+    text-style: bold;
+    text-align: center;
+    padding: 0 2;
+    height: 3;
+    content-align: center middle;
+}
+
+#settings_modal {
+    width: 84;
+    height: auto;
+    max-height: 90%;
+    background: $surface;
+    border: tall $accent;
+    margin: 2 4;
+    padding: 0;
+    layout: vertical;
+}
+
+#settings_modal Checkbox {
+    margin-bottom: 0;
+    background: $surface;
+    color: $text;
+}
+
+#settings_modal Checkbox:focus {
+    color: $primary;
+}
+
+#settings_modal Select {
+    width: 24;
+    background: $background;
+    border: tall $muted;
+    color: $text;
+}
+
+#settings_modal Select:focus {
+    border: tall $primary;
+}
+
+#settings_tabs {
+    height: auto;
+    max-height: 1fr;
+    background: $surface;
+    padding: 0;
+}
+
+#settings_tabs TabPane {
+    padding: 0;
+    background: $surface;
+}
+
+.hint {
+    color: $muted;
+    text-style: italic;
+    padding: 0 0 0 4;
     margin-bottom: 1;
 }
 
-Vertical {}
+.section_header {
+    color: $primary;
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 0;
+    padding: 0;
+}
+
+.setting_input_short {
+    width: 10;
+    background: $background;
+    color: $text;
+    border: tall $muted;
+}
+
+.setting_input_short:focus {
+    border: tall $primary;
+}
+
+.setting_input_wide {
+    width: 1fr;
+    background: $background;
+    color: $text;
+    border: tall $muted;
+}
+
+.setting_input_wide:focus {
+    border: tall $primary;
+}
+
+.setting_label {
+    width: 22;
+    color: $text;
+    padding: 0 1 0 0;
+    content-align: left middle;
+}
+
+.setting_row {
+    height: auto;
+    margin-bottom: 1;
+    align: left middle;
+}
+
+.tab_body {
+    height: auto;
+    max-height: 28;
+    padding: 1 2;
+    background: $surface;
+}
+
+TabbedContent {
+    background: $surface;
+    padding: 0;
+}
+
+TabbedContent > .content {
+    background: $surface;
+    padding: 0;
+}
