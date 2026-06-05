@@ -2,191 +2,281 @@
 
 **Nano, but modern.**
 
-A powerful, modern terminal text editor built for real developer workflows.
+*A professional terminal text editor built with Python, Textual, and Tree-sitter.*
+
+[![PyPI version](https://img.shields.io/pypi/v/supernanno?color=blue&label=PyPI)](https://pypi.org/project/supernanno/)
+[![Python](https://img.shields.io/pypi/pyversions/supernanno)](https://pypi.org/project/supernanno/)
+[![License](https://img.shields.io/badge/license-BSD%203--Clause-green)](LICENSE)
+[![Status](https://img.shields.io/pypi/status/supernanno)](https://pypi.org/project/supernanno/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)](https://github.com/hbisneto/SuperNanno)
+[![Issues](https://img.shields.io/github/issues/hbisneto/SuperNanno)](https://github.com/hbisneto/SuperNanno/issues)
 
 ---
 
-## Preview
+## Overview
 
-### Main Editor
+**SuperNanno** is a modern, keyboard-driven terminal text editor inspired by Nano, rebuilt from the ground up using contemporary Python tooling and a service-oriented, event-driven architecture.
+
+Built on the **[Textual](https://github.com/Textualize/textual)** TUI framework and powered by **[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)** for incremental syntax parsing, SuperNanno delivers a rich editing experience without sacrificing the speed and portability that make terminal editors indispensable.
+
+Designed with long-term **maintainability**, **modularity**, and **developer ergonomics** as first-class concerns, SuperNanno is not just an editor — it's a well-engineered application.
+
+---
+
+## Screenshots
+
+<details>
+<summary>Main Editor</summary>
 
 ![Main Editor](https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/editor_main.png)
 
-A modern terminal editing experience focused on productivity, responsiveness, and developer ergonomics.
+</details>
 
----
-
-### Search & Replace
+<details>
+<summary>Search & Replace</summary>
 
 ![Search Replace](https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/search_replace.png)
 
-Integrated search engine with literal, case-sensitive, and regex-based search strategies.
+</details>
 
----
-
-### Sidebar File Explorer
+<details>
+<summary>Sidebar File Explorer</summary>
 
 ![Sidebar](https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/sidebar.png)
 
-Quick project navigation with integrated file explorer and click-to-open workflow.
+</details>
 
----
-
-### Intelligent Status System
+<details>
+<summary>Intelligent Status System</summary>
 
 ![Status Bar](https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/status_bar.png)
 
-Multi-level status bar with contextual feedback for success, warnings, diagnostics, and runtime events.
+</details>
 
----
-
-### Tree-sitter Syntax Highlighting
+<details>
+<summary>Tree-sitter Syntax Highlighting</summary>
 
 ![Syntax Highlighting](https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/syntax_highlighting.png)
 
-Fast and accurate syntax highlighting powered by Tree-sitter with intelligent Pygments fallback support.
+</details>
 
 ---
 
-## About SuperNanno
+## Why SuperNanno?
 
-**SuperNanno** is a modern terminal-based text editor inspired by Nano, rebuilt from the ground up using contemporary tools, resilient architecture, and developer-focused workflows.
+Most terminal editors fall into two categories: minimal tools that lack features, or complex environments with steep learning curves. SuperNanno occupies the space between — **familiar like Nano, capable like a modern IDE**.
 
-Built in **Python** using the **Textual** framework and **Tree-sitter**, SuperNanno delivers a rich editing experience while preserving the speed, simplicity, and efficiency expected from terminal applications.
-
-The project was designed with long-term maintainability, modularity, and extensibility as core principles.
+| | Nano | SuperNanno | Vim/Neovim |
+|---|---|---|---|
+| Terminal-native | ✅ | ✅ | ✅ |
+| Zero config required | ✅ | ✅ | ❌ |
+| Tree-sitter syntax highlighting | ❌ | ✅ | ✅ |
+| Built-in search & replace | ✅ | ✅ | ✅ |
+| Sidebar file explorer | ❌ | ✅ | plugin |
+| Session restore | ❌ | ✅ | plugin |
+| Structured logging | ❌ | ✅ | ❌ |
+| Diagnostic reporting | ❌ | ✅ | ❌ |
+| Mouse support | limited | ✅ | limited |
+| Python-extensible | ❌ | ✅ | ❌ |
 
 ---
 
-## Key Features
+## Features
 
-* **Full-featured editor** with advanced cursor movement, selection handling, and smooth scrolling
-* **High-performance syntax highlighting** powered by Tree-sitter with support for 16+ languages
-* **Intelligent Pygments fallback** for unsupported or partial grammars
-* **Robust File Manager** with atomic writes and resilient encoding handling
-* **Advanced Search Engine** using Strategy Pattern architecture
-* **Session Manager** with automatic restoration and persistence
-* **Automatic Backup System** with configurable directories
-* **Structured JSON Logging** with correlation IDs and contextual observability
-* **Integrated Diagnostic Service** and GitHub report generation
-* **Sidebar File Explorer** with responsive navigation
-* **Real-time Async Config Watcher**
-* **Modern status system** with contextual visual feedback
-* **Cross-platform support** for Linux, macOS, and Windows
-* **Mouse support** and intuitive keyboard-driven workflows
-* **Privacy-first architecture** with primarily offline operation
+### Editor Core
+
+- Full-featured editing with advanced cursor movement, selection handling, and smooth scrolling
+- Mouse support with intuitive click-to-position and scroll interaction
+- Auto-indentation, tab-to-spaces conversion, and trailing whitespace trimming
+- Configurable tab size, cursor style, word wrap, and line number display
+- Highlight current line for focused editing
+
+### Syntax Highlighting
+
+- **Tree-sitter** incremental parsing for fast, accurate, language-aware highlighting
+- **Pygments fallback** for unsupported extensions and edge cases
+- 16 languages supported out of the box (see [Supported Languages](#supported-languages))
+- Language auto-detection from file extension
+
+### Search & Replace Engine
+
+- Strategy Pattern architecture with swappable search modes
+- **Literal**, **case-sensitive**, and **regex-based** search strategies
+- Highlight all matches, navigate between results
+- Find and replace with confirmation flow
+
+### Sidebar File Explorer
+
+- Integrated directory tree with click-to-open workflow
+- Toggle visibility with `Ctrl+B`
+- Responsive layout that adapts to terminal size
+
+### Session & Backup
+
+- **Session Manager** persists the last opened file across restarts
+- Automatic session restore on launch (configurable)
+- **Backup System** creates `.bak` copies before overwriting files
+- Configurable backup directory and extension
+
+### Observability
+
+- **Structured JSON Logging** with correlation IDs on every event
+- **ErrorService** — centralized error handler that classifies exceptions by semantic category, assigns a unique `correlation_id`, generates a deduplication fingerprint, and reports to the status bar
+- **Diagnostic Service** — generates formatted GitHub Issue reports on `Ctrl+X`, complete with exception type, traceback, category labels, and fingerprint
+
+### Configuration
+
+- **Async Config Watcher** — monitors `config.json` at runtime and hot-reloads changes without restarting
+- **RC parser** for `.supernannorc` declarative settings
+- **Settings UI** accessible via `F1`
+- Live configuration reload with exponential backoff on failure
+
+### Design & UX
+
+- Modern Textual-based TUI with dark theme and clean layout
+- Multi-level status bar with contextual feedback (success, warning, error, diagnostic)
+- Keyboard-driven workflow with full mouse support as a complement
+- Startup markdown viewer for README/documentation display on launch
 
 ---
 
 ## Supported Languages
 
-SuperNanno currently includes Tree-sitter parsers for:
+Tree-sitter parsers are bundled for the following languages:
 
-* Python
-* JavaScript
-* Bash
-* Rust
-* Go
-* JSON
-* YAML
-* TOML
-* Markdown
-* HTML
-* CSS
-* Java
-* SQL
-* XML
-* Regex
+| Language | Parser | Notes |
+|---|---|---|
+| Python | `tree-sitter-python` | |
+| JavaScript | `tree-sitter-javascript` | |
+| Bash | `tree-sitter-bash` | |
+| Rust | `tree-sitter-rust` | |
+| Go | `tree-sitter-go` | |
+| JSON | `tree-sitter-json` | |
+| YAML | `tree-sitter-yaml` | |
+| TOML | `tree-sitter-toml` | |
+| Markdown | `tree-sitter-markdown` | |
+| HTML | `tree-sitter-html` | |
+| CSS | `tree-sitter-css` | |
+| Java | `tree-sitter-java` | |
+| SQL | `tree-sitter-sql` | |
+| XML | `tree-sitter-xml` | |
+| Regex | `tree-sitter-regex` | |
 
-Additional grammars can be integrated in future releases.
+Languages without a bundled grammar fall back to **Pygments** for best-effort highlighting.
 
 ---
 
 ## Installation
 
-### Development Setup (Recommended)
-
-```bash
-git clone https://github.com/hbisneto/SuperNanno.git
-cd SuperNanno
-bash dev.sh
-python app.py
-```
-
-The `dev.sh` installer supports:
-
-* Stable channel installation
-* Editable development mode
-* TestPyPI builds
-* Specific version installation
-* Local development workflows
-
----
-
-### PyPI
+### PyPI (Stable)
 
 ```bash
 pip install supernanno
 ```
 
+Or with `pipx` for isolated installation (recommended):
+
+```bash
+pipx install supernanno
+```
+
+### Developer Setup
+
+```bash
+git clone https://github.com/hbisneto/SuperNanno.git
+cd SuperNanno
+bash dev.sh
+```
+
+The `dev.sh` interactive installer supports five installation modes:
+
+| Option | Mode | Description |
+|---|---|---|
+| `1` | Stable Channel | Latest release from PyPI |
+| `2` | Local Developer Mode | Editable install from source (`pipx install --editable .`) |
+| `3` | Dev Channel | Latest build from TestPyPI |
+| `4` | Specific Dev Version | Pinned version from TestPyPI |
+| `5` | Specific Stable Version | Pinned version from PyPI |
+
+### Editable Install (Manual)
+
+```bash
+pip install -e .
+```
+
+### Requirements
+
+- Python 3.10, 3.11, or 3.12
+- `pipx` (recommended for isolated installs)
+- See `requirements.txt` for the full dependency list
+
 ---
 
 ## Usage
 
-### Open a file
+### Basic
 
 ```bash
+# Open a file
 supernanno my_file.py
+
+# Open with no file (new buffer)
+supernanno
 ```
 
-### Open at a specific line
+### Line and Search Navigation
 
 ```bash
+# Jump to line 42 on open
 supernanno +42 main.py
-```
 
-### Open and search for a term
-
-```bash
+# Open and search for a term immediately
 supernanno +/TODO app.py
 ```
 
-### Read-only mode
+### Flags
 
 ```bash
+# Read-only mode
 supernanno -v config.json
+
+# Enable automatic backups with custom directory
+supernanno -B -C ~/backups/ project.py
 ```
 
-### Enable automatic backups
+### Help & Version
 
 ```bash
-supernanno -B -C ~/backups/ project.py
+supernanno --help
+supernanno --version
 ```
 
 ---
 
 ## Keyboard Shortcuts
 
-| Shortcut   | Action                     |
-| ---------- | -------------------------- |
-| `Ctrl + N` | New file                   |
-| `Ctrl + O` | Open file                  |
-| `Ctrl + S` | Save file                  |
-| `Ctrl + F` | Search                     |
-| `Ctrl + H` | Replace                    |
-| `Ctrl + B` | Toggle sidebar             |
-| `Ctrl + R` | Insert file                |
+| Shortcut | Action |
+|---|---|
+| `Ctrl + N` | New file |
+| `Ctrl + O` | Open file |
+| `Ctrl + S` | Save file |
+| `Ctrl + F` | Find / Search |
+| `Ctrl + H` | Find & Replace |
+| `Ctrl + B` | Toggle sidebar |
+| `Ctrl + R` | Insert file |
 | `Ctrl + X` | Generate diagnostic report |
-| `Ctrl + Q` | Quit editor                |
-| `F1`       | Open settings              |
+| `Ctrl + Q` | Quit editor |
+| `F1` | Open settings |
 
 ---
 
 ## Configuration
 
-SuperNanno is highly configurable through the `.supernannorc` file.
+SuperNanno supports two configuration layers that work together:
 
-Example:
+### `.supernannorc` — Declarative Settings
+
+Located in the project root or the user config directory. Uses a simple `set key [value]` syntax:
 
 ```bash
 set backup
@@ -197,59 +287,100 @@ set tabsize 4
 set indenttype spaces
 ```
 
-Additional runtime and UI settings are available through `config.json`.
+### `config.json` — Runtime Configuration
+
+Full structured configuration file with live reload support:
+
+```json
+{
+  "settings": {
+    "startup": {
+      "default_save_location": "",
+      "restore_session": true
+    },
+    "session": {
+      "last_opened_file": "",
+      "recent_files": [],
+      "auto_save": false,
+      "auto_save_interval": 60
+    },
+    "editor": {
+      "tab_size": 4,
+      "use_spaces": true,
+      "auto_indent": true,
+      "word_wrap": true,
+      "highlight_current_line": true,
+      "cursor_style": "block"
+    },
+    "ui": {
+      "line_numbers": true,
+      "theme": "dark",
+      "status_bar": true,
+      "mouse_support": true,
+      "smooth_scrolling": true
+    },
+    "search": {
+      "case_sensitive": false,
+      "use_regex": false,
+      "highlight_all_matches": true
+    },
+    "files": {
+      "auto_create_backup": true,
+      "backup_extension": ".bak",
+      "trim_trailing_whitespace": true
+    }
+  }
+}
+```
+
+Changes to `config.json` are detected by the async watcher and applied live — no restart required.
+
+### Configuration Directories
+
+| Platform | Path |
+|---|---|
+| Linux | `~/.config/Bisneto/SuperNanno/` |
+| macOS | `~/Library/Application Support/Bisneto/SuperNanno/` |
+| Windows | `%APPDATA%\Bisneto\SuperNanno\` |
 
 ---
 
 ## Architecture
 
-SuperNanno follows a clean, professional, and maintainable architecture designed for long-term scalability.
+SuperNanno is built on a **service-oriented, event-driven architecture** designed for resilience, observability, and clean separation of concerns.
 
-#### Core Principles
+### Design Principles
 
-* **Event-driven architecture**
-* **Robust State Management**
-* **Service-oriented modular design**
-* **Best-effort resilience model**
-* **Structured observability**
-* **UI-independent business logic**
+- **AppContext as application facade** — all services, state, and cross-cutting concerns are accessed through a single `AppContext` instance, avoiding global state and tight coupling
+- **Event-driven UI** — user interactions are dispatched as Textual events, with dedicated handler modules (one file per concern where possible)
+- **Service layer isolation** — business logic lives in `services/` and `core/`, completely independent of the Textual widget tree
+- **Best-effort resilience** — logging, config watching, backup, and diagnostics are always wrapped in defensive exception handling; secondary failures never crash the editor
+- **Structured observability** — every significant action emits a structured JSON log entry with `action`, `correlation_id`, `path`, and contextual metadata
+- **Strategy Pattern for search** — search strategies (literal, case-sensitive, regex) are registered in a `SearchRegistry` and selected at runtime without conditionals in the call site
 
 ### Project Structure
 
 ```text
-├── .gitignore
-├── .supernannorc
-├── .vscode
-│   └── launch.json
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-├── config.json
-├── dev.sh
+SuperNanno/
+├── .supernannorc               # Declarative configuration
+├── config.json                 # Runtime configuration (live reload)
+├── dev.sh                      # Interactive developer installer
 ├── pyproject.toml
 ├── requirements.txt
 ├── setup.py
-└── supernanno
-    ├── .DS_Store
-    ├── __init__.py
-    ├── __main__.py
-    ├── app.py
-    ├── cli
-    │   ├── __init__.py
+└── supernanno/
+    ├── app.py                  # Application entry point
+    ├── cli/                    # Argument parsing & CLI models
     │   ├── constants.py
     │   ├── models.py
     │   └── parser.py
-    ├── core
-    │   ├── __init__.py
-    │   ├── __version__.py
+    ├── core/                   # Business logic, independent of UI
     │   ├── editor.py
     │   ├── file_manager.py
     │   ├── logger.py
     │   ├── status.py
     │   └── structured_logger.py
-    ├── events
-    │   ├── __init__.py
+    ├── events/                 # Textual event handlers (one file per event)
     │   ├── button_pressed.py
     │   ├── cursor_watcher.py
     │   ├── directory_tree_selected.py
@@ -260,122 +391,137 @@ SuperNanno follows a clean, professional, and maintainable architecture designed
     │   ├── mount.py
     │   ├── text_area_changed.py
     │   └── unmount.py
-    ├── handlers
-    │   ├── __init__.py
+    ├── handlers/               # High-level user action handlers
     │   ├── file.py
     │   ├── quit.py
     │   └── toggle_sidebar.py
-    ├── search
-    │   ├── __init__.py
+    ├── search/                 # Search subsystem (Strategy Pattern)
     │   ├── controller.py
     │   ├── engine.py
     │   ├── models.py
     │   ├── registry.py
     │   └── strategies.py
-    ├── services
-    │   ├── __init__.py
-    │   ├── app_context.py
+    ├── services/               # Application services
+    │   ├── app_context.py      # Central application facade
     │   ├── config_applier.py
     │   ├── config_manager.py
-    │   ├── error_service.py
-    │   ├── issue_service.py
+    │   ├── error_service.py    # Centralized error handling & classification
+    │   ├── issue_service.py    # GitHub diagnostic report generator
     │   ├── log_service.py
     │   ├── paths.py
     │   ├── rc_parser.py
     │   └── session_manager.py
-    ├── states
-    │   ├── __init__.py
+    ├── states/                 # Application state machine
     │   ├── base.py
     │   └── search.py
-    ├── style.tcss
-    ├── tests
+    ├── style.tcss              # Textual CSS styles
+    ├── tests/
     │   └── test_issue_service.py
-    └── ui
-        ├── __init__.py
+    └── ui/                     # Widget layout and UI components
         ├── bindings.py
         ├── layout.py
         ├── search_bar.py
-        ├── settings
-        │   ├── __init__.py
+        ├── settings/
         │   └── screen.py
         └── startup_view.py
 ```
 
-### Architectural Highlights
+### Error & Diagnostic Pipeline
 
-* `AppContext` as centralized application facade
-* Clear separation of concerns
-* Async runtime infrastructure
-* Structured logging subsystem
-* Defensive error handling
-* Independent service layers
-* Config watcher with exponential backoff resilience
+When an exception occurs anywhere in the application:
+
+1. `ErrorService.handle()` is called with the exception and semantic context
+2. A unique `correlation_id` (8-char hex) is generated for traceability
+3. The exception is classified into a semantic category (e.g., `FILE_PERMISSION_ERROR`, `CONFIG_PARSE_ERROR`, `UI_STATE_ERROR`)
+4. An MD5 fingerprint is computed from the exception type and traceback for deduplication
+5. The full context is written to the structured JSON log
+6. The status bar displays `[correlation_id] ExceptionType — press CTRL+X to report`
+7. `IssueService` can then format a complete GitHub Issue report from this state
+
+This pipeline ensures every error is traceable, categorized, and actionable.
 
 ---
 
-## Configuration Directories
+## Technical Highlights
 
-| Platform | Directory                                           |
-| -------- | --------------------------------------------------- |
-| Linux    | `~/.config/Bisneto/SuperNanno/`                     |
-| macOS    | `~/Library/Application Support/Bisneto/SuperNanno/` |
-| Windows  | `%APPDATA%\Bisneto\SuperNanno\`                     |
+- **Async runtime** — built on Python's `asyncio` via Textual; config watcher and I/O operations are non-blocking
+- **Atomic file writes** — `FileManager` uses a write-to-temp-then-rename strategy to prevent data loss on save
+- **RC parser** — `.supernannorc` is parsed at startup and merged with `config.json` for a unified settings model
+- **Structured logging** — every log entry is a JSON object with `level`, `action`, `timestamp`, `correlation_id`, and optional `path`, `exc`, and `extra` fields; no unstructured `print()` calls in service code
+- **Config watcher with exponential backoff** — the async file watcher retries on I/O failure with increasing delay, avoiding log spam on transient errors
+- **Session state** — last opened file is persisted per-session and can be restored automatically on next launch
 
 ---
 
 ## Privacy
 
-SuperNanno was built with **privacy as a core principle**.
+SuperNanno was built with **privacy as a core, non-negotiable principle**.
 
-* Primarily operates offline
-* No telemetry
-* No unnecessary data collection
-* No hidden analytics
-* Local-only logs, sessions, and configuration files
+- Operates **entirely offline** by default
+- **No telemetry** of any kind
+- **No analytics**, no crash reporting to third parties
+- **No hidden network requests**
+- All logs, sessions, backups, and configuration files remain **local to your machine**
+- The only optional network activity is `IssueService` — which only fires when *you* explicitly press `Ctrl+X` and choose to submit a report
 
 ---
 
 ## Running Tests
 
 ```bash
+# Run all tests
 pytest tests/ -v
-```
 
-Run a specific test file:
-
-```bash
+# Run a specific test file
 pytest tests/test_issue_service.py -v
+
+# From the package root
+python -m pytest tests/ -v
 ```
+
+Tests are written to be **independent of the Textual widget tree** wherever possible. Unit tests are preferred over integration tests.
 
 ---
 
 ## Roadmap
 
-* [x] Tree-sitter syntax highlighting
-* [x] Sidebar file explorer
-* [x] Session persistence
-* [x] Structured logging
-* [x] Diagnostic reporting
-* [x] Async configuration watcher
-* [ ] Plugin system
-* [ ] Integrated terminal
-* [ ] Git integration
-* [ ] Theme marketplace
-* [ ] Multi-tab editing
-* [ ] Package manager
+**Completed**
+
+- [x] Tree-sitter syntax highlighting with Pygments fallback
+- [x] Sidebar file explorer
+- [x] Session persistence and restore
+- [x] Structured JSON logging
+- [x] Diagnostic reporting with GitHub issue generation
+- [x] Async configuration watcher with live reload
+- [x] Backup system
+- [x] Settings UI screen
+- [x] Search & replace with strategy pattern
+
+**Planned**
+
+- [ ] Plugin system
+- [ ] Integrated terminal pane
+- [ ] Git integration (diff, status, commit)
+- [ ] Theme marketplace
+- [ ] Multi-tab editing
+- [ ] Package manager for grammars and themes
 
 ---
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome and appreciated. Please read the following documents before submitting pull requests or opening issues:
 
-Please read:
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — development workflow, architecture guidelines, PR process
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community standards
 
-* `CONTRIBUTING.md`
-* `CODE_OF_CONDUCT.md`
+### Quick Contributor Reference
 
-before submitting pull requests or issues.
+- All logic should flow through `AppContext` — avoid bypassing the service layer
+- Use `ctx.errors.handle()` instead of raw `try/except` in service code
+- Use `ctx.logs.info()` / `ctx.logs.error()` for structured logging
+- New top-level modules require a discussion first
+- Commit messages follow conventional commit style (`feat:`, `fix:`, `docs:`, `refactor:`)
 
 ---
 
@@ -383,27 +529,31 @@ before submitting pull requests or issues.
 
 **BSD 3-Clause License**
 
-Copyright © 2026
-Heitor Bardemaker A. Bisneto
+Copyright © 2026 Heitor Bardemaker A. Bisneto
+
+See [`LICENSE`](LICENSE) for the full text.
 
 ---
 
 ## Acknowledgments
 
-* [Textual](https://github.com/Textualize/textual) — Modern TUI framework
-* [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) — Incremental parsing system
-* [Rich](https://github.com/Textualize/rich) — Advanced terminal rendering
+- [Textual](https://github.com/Textualize/textual) — Modern Python TUI framework by Textualize
+- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) — Incremental, error-tolerant parsing system
+- [Rich](https://github.com/Textualize/rich) — Advanced terminal rendering library
 
 ---
 
 ## Links
 
-* Repository:
-  https://github.com/hbisneto/SuperNanno
-
-* Issues & Bug Reports:
-  https://github.com/hbisneto/SuperNanno/issues
+- **Homepage:** https://hbisneto.github.io/SuperNanno
+- **Repository:** https://github.com/hbisneto/SuperNanno
+- **Bug Reports & Issues:** https://github.com/hbisneto/SuperNanno/issues
+- **PyPI:** https://pypi.org/project/supernanno/
 
 ---
 
-**Built with care for developers who ❤️ the terminal.**
+<div align="center">
+
+*Built with care for developers who ❤️ the terminal.*
+
+</div>
