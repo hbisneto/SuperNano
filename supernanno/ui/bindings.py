@@ -30,31 +30,6 @@ A modern terminal text editor built with Python, Textual and Tree-sitter.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## Preview
-
-<details>
-<summary>Main Editor</summary>
-
-https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/editor_main.png
-
-</details>
-
-<details>
-<summary>Search & Replace</summary>
-
-https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/search_replace.png
-
-</details>
-
-<details>
-<summary>Sidebar File Explorer</summary>
-
-https://raw.githubusercontent.com/hbisneto/hbisneto.github.io/main/supernanno/screenshots/sidebar.png
-
-</details>
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## About
 
 SuperNanno is a keyboard-driven terminal editor inspired by Nano and rebuilt using modern Python tooling.
