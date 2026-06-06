@@ -19,7 +19,7 @@
 
 Built on the **[Textual](https://github.com/Textualize/textual)** TUI framework and powered by **[Tree-sitter](https://tree-sitter.github.io/tree-sitter/)** for incremental syntax parsing, SuperNanno delivers a rich editing experience without sacrificing the speed and portability that make terminal editors indispensable.
 
-Designed with long-term **maintainability**, **modularity**, and **developer ergonomics** as first-class concerns, SuperNanno is not just an editor — it's a well-engineered application.
+Designed with long-term **maintainability**, **modularity**, and **developer ergonomics** as first-class concerns, SuperNanno is not just an editor: It's a well-engineered application.
 
 ---
 
@@ -64,7 +64,7 @@ Designed with long-term **maintainability**, **modularity**, and **developer erg
 
 ## Why SuperNanno?
 
-Most terminal editors fall into two categories: minimal tools that lack features, or complex environments with steep learning curves. SuperNanno occupies the space between — **familiar like Nano, capable like a modern IDE**.
+Most terminal editors fall into two categories: minimal tools that lack features, or complex environments with steep learning curves. SuperNanno occupies the space between: **Familiar like Nano, capable like a modern IDE**.
 
 | | Nano | SuperNanno | Vim/Neovim |
 |---|---|---|---|
@@ -121,12 +121,12 @@ Most terminal editors fall into two categories: minimal tools that lack features
 ### Observability
 
 - **Structured JSON Logging** with correlation IDs on every event
-- **ErrorService** — centralized error handler that classifies exceptions by semantic category, assigns a unique `correlation_id`, generates a deduplication fingerprint, and reports to the status bar
-- **Diagnostic Service** — generates formatted GitHub Issue reports on `Ctrl+X`, complete with exception type, traceback, category labels, and fingerprint
+- **ErrorService:** Centralized error handler that classifies exceptions by semantic category, assigns a unique `correlation_id`, generates a deduplication fingerprint, and reports to the status bar
+- **Diagnostic Service:** Generates formatted GitHub Issue reports on `Ctrl+X`, complete with exception type, traceback, category labels, and fingerprint
 
 ### Configuration
 
-- **Async Config Watcher** — monitors `config.json` at runtime and hot-reloads changes without restarting
+- **Async Config Watcher:** Monitors `config.json` at runtime and hot-reloads changes without restarting
 - **RC parser** for `.supernannorc` declarative settings
 - **Settings UI** accessible via `F1`
 - Live configuration reload with exponential backoff on failure
@@ -274,7 +274,7 @@ supernanno --version
 
 SuperNanno supports two configuration layers that work together:
 
-### `.supernannorc` — Declarative Settings
+### Declarative Settings: `.supernannorc`
 
 Located in the project root or the user config directory. Uses a simple `set key [value]` syntax:
 
@@ -287,7 +287,7 @@ set tabsize 4
 set indenttype spaces
 ```
 
-### `config.json` — Runtime Configuration
+### Runtime Configuration: `config.json`
 
 Full structured configuration file with live reload support:
 
@@ -333,7 +333,7 @@ Full structured configuration file with live reload support:
 }
 ```
 
-Changes to `config.json` are detected by the async watcher and applied live — no restart required.
+Changes to `config.json` are detected by the async watcher and applied live! No restart required!
 
 ### Configuration Directories
 
@@ -351,36 +351,37 @@ SuperNanno is built on a **service-oriented, event-driven architecture** designe
 
 ### Design Principles
 
-- **AppContext as application facade** — all services, state, and cross-cutting concerns are accessed through a single `AppContext` instance, avoiding global state and tight coupling
-- **Event-driven UI** — user interactions are dispatched as Textual events, with dedicated handler modules (one file per concern where possible)
-- **Service layer isolation** — business logic lives in `services/` and `core/`, completely independent of the Textual widget tree
-- **Best-effort resilience** — logging, config watching, backup, and diagnostics are always wrapped in defensive exception handling; secondary failures never crash the editor
-- **Structured observability** — every significant action emits a structured JSON log entry with `action`, `correlation_id`, `path`, and contextual metadata
-- **Strategy Pattern for search** — search strategies (literal, case-sensitive, regex) are registered in a `SearchRegistry` and selected at runtime without conditionals in the call site
+- **AppContext as application facade:** All services, state, and cross-cutting concerns are accessed through a single `AppContext` instance, avoiding global state and tight coupling
+- **Event-driven UI:** User interactions are dispatched as Textual events, with dedicated handler modules (one file per concern where possible)
+- **Service layer isolation:** Business logic lives in `services/` and `core/`, completely independent of the Textual widget tree
+- **Best-effort resilience:** Logging, config watching, backup, and diagnostics are always wrapped in defensive exception handling; secondary failures never crash the editor
+- **Structured observability:** Every significant action emits a structured JSON log entry with `action`, `correlation_id`, `path`, and contextual metadata
+- **Strategy Pattern for search:** Search strategies (literal, case-sensitive, regex) are registered in a `SearchRegistry` and selected at runtime without conditionals in the call site
 
 ### Project Structure
 
 ```text
 SuperNanno/
-├── .supernannorc               # Declarative configuration
-├── config.json                 # Runtime configuration (live reload)
-├── dev.sh                      # Interactive developer installer
+├── .supernannorc               # Declarative Configuration
+├── config.json                 # Runtime Configuration (Live Reload)
+├── dev.sh                      # Interactive Developer Installer
+├── install.sh                  # Interactive Stable Installer
 ├── pyproject.toml
 ├── requirements.txt
 ├── setup.py
 └── supernanno/
-    ├── app.py                  # Application entry point
-    ├── cli/                    # Argument parsing & CLI models
+    ├── app.py                  # Application Entry Point
+    ├── cli/                    # Argument Parsing & CLI Models
     │   ├── constants.py
     │   ├── models.py
     │   └── parser.py
-    ├── core/                   # Business logic, independent of UI
+    ├── core/                   # Business Logic, Independent Of UI
     │   ├── editor.py
     │   ├── file_manager.py
     │   ├── logger.py
     │   ├── status.py
     │   └── structured_logger.py
-    ├── events/                 # Textual event handlers (one file per event)
+    ├── events/                 # Textual Event Handlers (One File Per Event)
     │   ├── button_pressed.py
     │   ├── cursor_watcher.py
     │   ├── directory_tree_selected.py
@@ -391,33 +392,33 @@ SuperNanno/
     │   ├── mount.py
     │   ├── text_area_changed.py
     │   └── unmount.py
-    ├── handlers/               # High-level user action handlers
+    ├── handlers/               # High-Level User Action Handlers
     │   ├── file.py
     │   ├── quit.py
     │   └── toggle_sidebar.py
-    ├── search/                 # Search subsystem (Strategy Pattern)
+    ├── search/                 # Search Subsystem (Strategy Pattern)
     │   ├── controller.py
     │   ├── engine.py
     │   ├── models.py
     │   ├── registry.py
     │   └── strategies.py
-    ├── services/               # Application services
-    │   ├── app_context.py      # Central application facade
+    ├── services/               # Application Services
+    │   ├── app_context.py      # Central Application Façade
     │   ├── config_applier.py
     │   ├── config_manager.py
-    │   ├── error_service.py    # Centralized error handling & classification
-    │   ├── issue_service.py    # GitHub diagnostic report generator
+    │   ├── error_service.py    # Centralized Error Handling & Classification
+    │   ├── issue_service.py    # GitHub Diagnostic Report Generator
     │   ├── log_service.py
     │   ├── paths.py
     │   ├── rc_parser.py
     │   └── session_manager.py
-    ├── states/                 # Application state machine
+    ├── states/                 # Application State Machine
     │   ├── base.py
     │   └── search.py
-    ├── style.tcss              # Textual CSS styles
+    ├── style.tcss              # Textual CSS Styles
     ├── tests/
     │   └── test_issue_service.py
-    └── ui/                     # Widget layout and UI components
+    └── ui/                     # Widget Layout And UI Components
         ├── bindings.py
         ├── layout.py
         ├── search_bar.py
@@ -444,12 +445,12 @@ This pipeline ensures every error is traceable, categorized, and actionable.
 
 ## Technical Highlights
 
-- **Async runtime** — built on Python's `asyncio` via Textual; config watcher and I/O operations are non-blocking
-- **Atomic file writes** — `FileManager` uses a write-to-temp-then-rename strategy to prevent data loss on save
-- **RC parser** — `.supernannorc` is parsed at startup and merged with `config.json` for a unified settings model
-- **Structured logging** — every log entry is a JSON object with `level`, `action`, `timestamp`, `correlation_id`, and optional `path`, `exc`, and `extra` fields; no unstructured `print()` calls in service code
-- **Config watcher with exponential backoff** — the async file watcher retries on I/O failure with increasing delay, avoiding log spam on transient errors
-- **Session state** — last opened file is persisted per-session and can be restored automatically on next launch
+- **Async runtime:** Built on Python's `asyncio` via Textual; config watcher and I/O operations are non-blocking
+- **Atomic file writes:** `FileManager` uses a write-to-temp-then-rename strategy to prevent data loss on save
+- **RC parser:** `.supernannorc` is parsed at startup and merged with `config.json` for a unified settings model
+- **Structured logging:** Every log entry is a JSON object with `level`, `action`, `timestamp`, `correlation_id`, and optional `path`, `exc`, and `extra` fields; no unstructured `print()` calls in service code
+- **Config watcher with exponential backoff:** The async file watcher retries on I/O failure with increasing delay, avoiding log spam on transient errors
+- **Session state:** Last opened file is persisted per-session and can be restored automatically on next launch
 
 ---
 
@@ -462,7 +463,7 @@ SuperNanno was built with **privacy as a core, non-negotiable principle**.
 - **No analytics**, no crash reporting to third parties
 - **No hidden network requests**
 - All logs, sessions, backups, and configuration files remain **local to your machine**
-- The only optional network activity is `IssueService` — which only fires when *you* explicitly press `Ctrl+X` and choose to submit a report
+- The only optional network activity is `IssueService`, which only fires when *you* explicitly press `Ctrl+X` and choose to submit a report
 
 ---
 
@@ -512,12 +513,12 @@ Tests are written to be **independent of the Textual widget tree** wherever poss
 
 Contributions are welcome and appreciated. Please read the following documents before submitting pull requests or opening issues:
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — development workflow, architecture guidelines, PR process
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community standards
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): Development workflow, architecture guidelines, PR process
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md): Community standards
 
 ### Quick Contributor Reference
 
-- All logic should flow through `AppContext` — avoid bypassing the service layer
+- All logic should flow through `AppContext`: Avoid bypassing the service layer
 - Use `ctx.errors.handle()` instead of raw `try/except` in service code
 - Use `ctx.logs.info()` / `ctx.logs.error()` for structured logging
 - New top-level modules require a discussion first
@@ -537,9 +538,9 @@ See [`LICENSE`](LICENSE) for the full text.
 
 ## Acknowledgments
 
-- [Textual](https://github.com/Textualize/textual) — Modern Python TUI framework by Textualize
-- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) — Incremental, error-tolerant parsing system
-- [Rich](https://github.com/Textualize/rich) — Advanced terminal rendering library
+- [Textual](https://github.com/Textualize/textual): Modern Python TUI framework by Textualize
+- [Tree-sitter](https://tree-sitter.github.io/tree-sitter/): Incremental, error-tolerant parsing system
+- [Rich](https://github.com/Textualize/rich): Advanced terminal rendering library
 
 ---
 
