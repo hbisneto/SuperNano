@@ -95,7 +95,7 @@ Most terminal editors fall into two categories: minimal tools that lack features
 
 - **Tree-sitter** incremental parsing for fast, accurate, language-aware highlighting
 - **Pygments fallback** for unsupported extensions and edge cases
-- 16 languages supported out of the box (see [Supported Languages](#supported-languages))
+- 16 languages supported out of the box (see [Supported Languages](https://hbisneto.github.io/supernanno/index.html#supportedlanguages))
 - Language auto-detection from file extension
 
 ### Search & Replace Engine
