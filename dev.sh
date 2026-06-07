@@ -3,7 +3,7 @@
 # =============================================================================
 # SuperNanno — Smart Setup Script [DEV.SH]
 # =============================================================================
-# Suporta instalação via pipx tanto da versão local quanto do PyPI.
+# Supports both local and PyPI installation via pipx.
 # =============================================================================
 set -euo pipefail
 clear
