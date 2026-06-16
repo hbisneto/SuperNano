@@ -14,6 +14,7 @@ BINDINGS = [
     ("ctrl+q", "quit", "Quit"),
     ("ctrl+x", "report_issue", "Report Issue"),
     ("f1", "show_settings", "Settings"),
+    ("ctrl+g", "complete_word", "Complete Word"),
 ]
 
 SETTINGS_BINDINGS = [

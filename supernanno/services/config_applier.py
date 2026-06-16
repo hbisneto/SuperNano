@@ -10,6 +10,7 @@ class ConfigApplier:
         self.app = ctx.app
 
         self.handlers = {
+            "autocompletion":        self.apply_autocompletion,
             "backup":                self.apply_backup,
             "backupdir":             self.apply_backup_dir,
             "configwatcher":         self.apply_config_watcher,
@@ -39,6 +40,9 @@ class ConfigApplier:
                     )
 
     # ─── Handlers ────────────────────────────────────────────────────
+
+    def apply_autocompletion(self, value):
+        self.ctx.autocompletion_enabled = bool(value)
 
     def apply_backup(self, value):
         self.ctx.backup_enabled = bool(value)

@@ -25,6 +25,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "tabsize":     4,
 
     # App
+    "autocompletion": True,
     "operatingdir":  "~/",
     "restoresession": True,
     "sidebar":       True,

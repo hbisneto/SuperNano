@@ -120,6 +120,13 @@ class SettingsScreen(Screen):
                                 id="tabbehavior",
                                 allow_blank=False,
                             )
+                        
+                        yield SectionHeader("Autocomplete", classes="section_header")
+                        yield Checkbox(
+                            "Enable word completion (Ctrl+])",
+                            value=bool(cfg.get("autocompletion", True)),
+                            id="autocompletion",
+                        )
 
                         yield SectionHeader("Backups", classes="section_header")
                         yield Checkbox(
@@ -242,6 +249,7 @@ class SettingsScreen(Screen):
         read_errors: list[str] = []
 
         checkbox_ids = [
+            "autocompletion",
             "restoresession",
             "configwatcher",
             "debug",

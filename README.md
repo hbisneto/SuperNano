@@ -85,6 +85,7 @@ Most terminal editors fall into two categories: minimal tools that lack features
 
 ### Editor Core
 
+- Word completion based on current buffer (Ctrl + ])
 - Full-featured editing with advanced cursor movement, selection handling, and smooth scrolling
 - Mouse support with intuitive click-to-position and scroll interaction
 - Auto-indentation, tab-to-spaces conversion, and trailing whitespace trimming
@@ -267,6 +268,7 @@ supernanno --version
 | `Ctrl + X` | Generate diagnostic report |
 | `Ctrl + Q` | Quit editor |
 | `F1` | Open settings |
+| `Ctrl + ]` | Word completion (cyclic) |
 
 ---
 

@@ -13,6 +13,7 @@ from ..services.config_manager import ConfigManager
 from ..services.issue_service import IssueService
 from ..services.log_service import LogService
 from ..services.session_manager import SessionManager
+from ..core.completion import CompletionService
 from ..core.__version__ import VERSION
 
 
@@ -26,6 +27,7 @@ class AppContext:
         self.pending_action = None
 
         # ==================== SETTINGS ====================
+        self.autocompletion_enabled = True
         self.config_watcher          = True
         self.config_watcher_interval = 1
         self.restore_session         = True
@@ -44,6 +46,7 @@ class AppContext:
             create_if_missing=not getattr(app, "explicit_file_open", False)
         )
         self.config_applier = ConfigApplier(self)
+        self.completion = CompletionService(self)
 
         # Logging — Logger instanciado com versão para enriquecer entradas
         self.logger = Logger(paths.get_logs_dir(), app_version=VERSION)
@@ -132,15 +135,21 @@ class AppContext:
         encoding  = f" | {self.encoding}" if self.encoding else ""
         read_time = f" | ~{self.read_time}m read" if self.read_time else ""
 
+        completion_status = " | QuickFill" if self.autocompletion_enabled else ""
+        
         base = (
             f"{path_str}{dirty} | {lang} | Ln {row}, Col {col}"
-            f"{stats}{size}{read_time}{eol}{encoding}"
+            f"{stats}{size}{read_time}{eol}{encoding}{completion_status}"
         )
 
         if self.read_only:
             return f"(READ-ONLY): {base}"
 
         return base
+
+        # return base
+        # completion_status = " | Compl" if getattr(self, "autocompletion_enabled", True) else ""
+        # return base + completion_status
 
     def mark_clean(self):
         if self.editor:

@@ -15,14 +15,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="supernanno",
-    version="0.0.23",
+    version="0.0.13",
     url="https://github.com/hbisneto/SuperNanno",
     license="BSD-3-Clause",
     
     author="Heitor Bardemaker A. Bisneto",
     author_email="bisnetoinc@gmail.com",
     
-    description="Nano, but modern. A powerful terminal text editor built with Textual and Tree-sitter.",
+    description="Nano, but modern. With UI, syntax highlighting, and a real developer workflow",
     long_description=long_description,
     long_description_content_type="text/markdown",
     
@@ -47,7 +47,7 @@ setup(
     
     python_requires=">=3.10",
     install_requires=[
-        "textual==8.2.3",
+        "textual==8.2.7",
         "rich==14.3.3",
         "tree-sitter==0.25.2",
         "tree-sitter-python==0.25.0",
