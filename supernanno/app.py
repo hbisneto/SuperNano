@@ -99,13 +99,11 @@ class SuperNanno(App):
     # ==================== ACTIONS ====================
 
     def action_complete_word(self):
-        """Autocomplete cíclico (Ctrl + ] ou Ctrl + G)"""
+        """Mostra sugestões de autocomplete (Ctrl + G)"""
         if getattr(self.ctx, "autocompletion_enabled", True):
-            success = self.ctx.completion.complete()
-            if not success:
-                self.ctx.status.warning("(Completion): Não foi possível completar")
+            self.ctx.completion.show_completions()
         else:
-            self.ctx.status.warning("(Completion): Autocomplete desabilitado nas configurações")
+            self.ctx.status.warning("(Completion): Autocomplete desabilitado")
 
     def action_new_file(self):
         new(self.ctx)

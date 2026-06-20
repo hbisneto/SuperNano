@@ -1,0 +1,62 @@
+/* =============================================================================
+   SUPERSENSE — Completion Popup TCSS
+   =============================================================================
+   Append these rules to style.tcss (or include via @import if supported).
+
+   #completion_popup  — the outer Vertical container
+   #completion_list   — the inner ListView
+   .completion_item   — individual ListItem rows
+   ============================================================================= */
+
+#completion_popup {
+    /* Floating panel — positioned at the bottom of the screen so it never
+       overlaps the cursor line; Textual 0.x does not support absolute
+       pixel-level positioning, so we dock to the bottom of "main" and let
+       the content area be scrolled by the ListView.
+       A fixed height is needed so the popup does not collapse. */
+    dock: bottom;
+    layer: overlay;            /* renders above editor content          */
+    width: 36;                 /* wide enough for most identifiers      */
+    max-height: 14;            /* 12 items + 2 border rows              */
+    height: auto;
+    background: $surface;
+    border: tall $accent;
+    margin: 0 0 3 0;           /* leave room for status bar             */
+    padding: 0;
+    display: none;             /* hidden by default (CompletionService mounts) */
+}
+
+/* When mounted by CompletionService the widget is always visible, so no
+   explicit .--visible class is needed — mounting makes it visible. */
+
+#completion_list {
+    width: 1fr;
+    height: auto;
+    max-height: 12;
+    background: $surface;
+    border: none;
+    padding: 0;
+}
+
+#completion_list > ListItem {
+    background: $surface;
+    color: $text;
+    padding: 0 1;
+    height: 1;
+}
+
+#completion_list > ListItem:hover {
+    background: $primary;
+    color: $surface;
+}
+
+#completion_list > ListItem.--highlight {
+    background: $accent;
+    color: $text;
+    text-style: bold;
+}
+
+.completion_item {
+    background: transparent;
+    color: $text;
+}

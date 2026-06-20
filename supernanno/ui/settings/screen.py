@@ -21,7 +21,10 @@ from textual.widgets import (
 )
 
 from ...services.config_manager import ConfigManager
-from ...ui.bindings import SETTINGS_BINDINGS
+from ...ui.bindings import (
+    COMPLETION_FILE,
+    SETTINGS_BINDINGS
+)
 
 class SectionHeader(Static):
     """Styled section title within a tab panel."""

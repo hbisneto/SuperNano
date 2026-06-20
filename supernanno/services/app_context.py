@@ -135,7 +135,7 @@ class AppContext:
         encoding  = f" | {self.encoding}" if self.encoding else ""
         read_time = f" | ~{self.read_time}m read" if self.read_time else ""
 
-        completion_status = " | QuickFill" if self.autocompletion_enabled else ""
+        completion_status = " | SuperSense: ON" if self.autocompletion_enabled else ""
         
         base = (
             f"{path_str}{dirty} | {lang} | Ln {row}, Col {col}"
@@ -168,7 +168,7 @@ class AppContext:
             return True
 
         self.pending_action = action
-        self.status.warning(f"{message} — press again to confirm")
+        self.status.warning(f"{message}: Press again to confirm")
         return False
 
     def clear_pending_action(self):

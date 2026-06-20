@@ -3,6 +3,7 @@
 from ..core import __version__ as VERSION
 
 CSS_FILE = "style.tcss"
+COMPLETION_FILE = "competion_popup.tcss"
 
 BINDINGS = [
     ("ctrl+b", "show_hide_sidebar", "Show/Hide Sidebar"),

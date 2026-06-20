@@ -1,4 +1,9 @@
-# events/key.py
+# supernanno/events/key.py
+#
+# Additions vs. original:
+#   - When a completion popup is active, Escape closes it first (before
+#     any other state transitions).  This mirrors VS Code behaviour where
+#     Esc dismisses the suggestion list without leaving the editor.
 
 def handle(ctx, event):
     state = ctx.state
@@ -15,7 +20,15 @@ def handle(ctx, event):
         ctx.app.in_startup = False
         return
 
-    # ── Delega para o estado ativo (inclui ↑/↓ capturados pelo SearchState) ──
+    # ── Dismiss completion popup first if it is active ────────────────
+    if event.key == "escape":
+        if hasattr(ctx, "completion") and ctx.completion is not None:
+            if ctx.completion.is_active:
+                ctx.completion.dismiss()
+                event.stop()
+                return
+
+    # ── Delegate to active state (Search, etc.) ───────────────────────
     if state and hasattr(state, "handle_key"):
         if state.handle_key(ctx, event):
             return
