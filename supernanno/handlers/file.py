@@ -4,15 +4,13 @@ from pathlib import Path
 from textual.widgets import Input
 from ..core.file_manager import FileManager
 from ..ui.bindings import IS_WELCOME_TEXT
-
+from nannokit.dialogs import OpenPath
 
 def is_welcome_content(text: str) -> bool:
     return text.strip() == IS_WELCOME_TEXT
 
-
 def new(ctx):
     current_text = ctx.editor.text
-
     if is_welcome_content(current_text) or not ctx.is_dirty:
         _do_new(ctx)
         return
@@ -21,25 +19,23 @@ def new(ctx):
         return
     _do_new(ctx)
 
-
 def _do_new(ctx):
     ctx.app._loading = True
     ctx.editor.load_text("")
     ctx.editor.language = None
     ctx.app._loading = False
-
     ctx.current_path = None
     ctx.mark_clean()
     ctx.editor.focus()
-
     ctx.status.persist("(File): New file")
     ctx.logs.info("(File): New file created", action="FILE_NEW")
 
-
+# ======================================== xxx ========================================
+# Old manual input version can stay for fallback: Will become an option feature via .rc
+# ======================================== xxx ========================================
 def open(ctx):
     input_w = ctx.app.query_one("#path_input", Input)
     input_w.display = True
-    # input_w.value = str(Path(".").absolute()) + "/"
     input_w.value = str(Path.home()) + "/"
     input_w.focus()
 
@@ -48,6 +44,34 @@ def open(ctx):
         ctx.path_container.display = True
 
     ctx.status.persist("(Path): Enter path to open file or folder")
+# ======================================== xxx ========================================
+# Old manual input version can stay for fallback: Will become an option feature via .rc
+# ======================================== xxx ========================================
+
+def open_with_dialog(ctx):
+    """New dialog-based open."""
+    def callback(result: "Path | list[Path] | None"):
+        if not result:
+            ctx.status.info("(Open): Cancelled")
+            return
+
+        paths = result if isinstance(result, list) else [result]
+
+        for p in paths:
+            if p.is_dir():
+                ctx.directory_tree.path = str(p)
+                ctx.directory_tree.reload()
+                ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
+            elif p.is_file():
+                # Reuse your existing load logic
+                load(ctx, str(p))
+            else:
+                ctx.status.warning(f"Invalid path: {p}")
+
+    OpenPath.show(
+        initial_directory=Path.home(),
+        callback=callback,
+    )
 
 
 def load(ctx, path_str: str, silent: bool = False):

@@ -14,13 +14,14 @@ from ..services.issue_service import IssueService
 from ..services.log_service import LogService
 from ..services.session_manager import SessionManager
 from ..core.__version__ import VERSION
+from nannokit.dialogs.core.manager import DialogManager
 
 
 class AppContext:
 
     def __init__(self, app):
         self.app = app
-
+        self.dialog_manager = DialogManager()
         self.current_path: "Path | None" = None
         self.state        = None
         self.pending_action = None

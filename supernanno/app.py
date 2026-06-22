@@ -1,9 +1,6 @@
 # app.py
 
 import asyncio
-# import os
-# import platform
-# import subprocess
 import sys
 from .cli.constants import HELP_TEXT
 from .cli.constants import VERSION
@@ -44,12 +41,13 @@ from .ui.bindings import (
 )
 from .ui.layout import create_layout
 from .ui.settings.screen import SettingsScreen
+from nannokit.dialogs.core.manager import DialogManager
+from .handlers import file
 
 # Intervalos de backoff para o config watcher em caso de erro
 _WATCHER_BACKOFF_INITIAL = 5.0    # segundos após 1º erro
 _WATCHER_BACKOFF_MAX     = 60.0   # máximo de backoff
 _WATCHER_MAX_ERRORS      = 20     # para após N erros consecutivos
-
 
 class SuperNanno(App):
     BINDINGS = BINDINGS
@@ -101,8 +99,31 @@ class SuperNanno(App):
     def action_new_file(self):
         new(self.ctx)
 
+    # def action_open_path(self):
+    #     open_file(self.ctx)
     def action_open_path(self):
-        open_file(self.ctx)
+        file.open_with_dialog(self.ctx)
+        # """Open file or folder using NannoKit dialog."""
+        # def on_open_result(result):
+        #     if not result:
+        #         self.ctx.status.info("(Dialog): Cancelled")
+        #         return
+
+        #     if isinstance(result, list):  # multiselect
+        #         for path in result:
+        #             self._handle_open_path(path)
+        #     else:
+        #         self._handle_open_path(result)
+
+        # # Prefer OpenFile (most common)
+        # open_folder.OpenFolder.show(
+        #     initial_directory=self.ctx.current_path or Path.home(),  # smart default
+        #     filters=["*.py", "*.md", "*.txt", "*.*"],  # customize
+        #     multiselect=False,  # or True
+        #     callback=on_open_result,
+        #     title="Open File - SuperNanno",
+        # )
+
 
     def action_quit(self):
         quit(self.ctx)
@@ -143,9 +164,12 @@ class SuperNanno(App):
         key.handle(self.ctx, event)
 
     def on_list_view_selected(self, event: ListView.Selected):
+        if self.screen.__class__.__module__.startswith("nannokit"):
+            return
         list_view_selected.handle(self.ctx, event)
 
     def on_mount(self):
+        DialogManager.attach(self)
         self.ctx.logs.info(
             f"(App): SuperNanno started — version {VERSION}",
             action="APP_MOUNT",
