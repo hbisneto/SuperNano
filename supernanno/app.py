@@ -58,7 +58,6 @@ class SuperNanno(App):
         self.cli_args             = cli_args
         self.input_mode           = None
         self._loading             = False
-        self._confirm_quit        = False
         self.welcome_text         = WELCOME
         self.explicit_file_open   = bool(cli_args and cli_args.file)
         self.ctx                  = AppContext(self)

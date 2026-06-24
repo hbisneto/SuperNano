@@ -10,15 +10,44 @@ from nannokit.dialogs import messagebox
 def is_welcome_content(text: str) -> bool:
     return text.strip() == IS_WELCOME_TEXT
 
+def _show_blocking_error(ctx, title: str, message: str, retry_action=None):
+    """Exibe um erro bloqueante via MessageBox (API oficial para decisões do usuário).
+
+    Sem `retry_action`: apenas informa (botão OK) — não há nada para tentar de novo.
+    Com `retry_action`: oferece RETRY_CANCEL, chamando `retry_action()` se o
+    usuário escolher "Retry".
+    """
+    if retry_action is None:
+        messagebox.show(
+            message,
+            title=title,
+            buttons=messagebox.buttons.OK,
+            type=messagebox.type.ERROR,
+        )
+        return
+
+    def on_result(result):
+        if result == "Retry":
+            retry_action()
+
+    messagebox.show(
+        message,
+        title=title,
+        buttons=messagebox.buttons.RETRY_CANCEL,
+        type=messagebox.type.ERROR,
+        callback=on_result,
+    )
+
 def new(ctx):
     current_text = ctx.editor.text
     if is_welcome_content(current_text) or not ctx.is_dirty:
         _do_new(ctx)
         return
 
-    if not ctx.check_dirty_before(lambda: _do_new(ctx)):
-        return
-    _do_new(ctx)
+    ctx.check_dirty_before(
+        lambda: _do_new(ctx),
+        "Discard unsaved changes and create a new file?",
+    )
 
 def _do_new(ctx):
     ctx.app._loading = True
@@ -98,7 +127,10 @@ def load(ctx, path_str: str, silent: bool = False):
         return
 
     if not path.is_file():
-        ctx.status.error(f"(File): Not found \"{path}\"")
+        _show_blocking_error(
+            ctx, "Open Error",
+            f"\"{path}\" could not be found.",
+        )
         ctx.logs.warning(
             f"(File): Path not found or not a file — {path}",
             action="FILE_LOAD_NOT_FOUND",
@@ -143,7 +175,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except UnicodeDecodeError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Encoding error — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nEncoding error.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -154,7 +190,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except PermissionError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Permission denied — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nPermission denied.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -164,7 +204,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except FileNotFoundError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Not found — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nFile not found.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -174,7 +218,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except OSError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): I/O error — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nI/O error.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -184,7 +232,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except Exception as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Load failed — {e}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\n{e}\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -298,11 +350,10 @@ def save(ctx):
     if ctx.read_only:
         messagebox.show(
             "Cannot save in read-only mode",
-            "SuperNanno Mode: (READ ONLY)",
+            "SuperNanno: READ ONLY",
             messagebox.buttons.OK,
             messagebox.type.INFO
         )
-        ctx.status.warning("(Editor): Cannot save in read-only mode")
         ctx.logs.warning("(File): Save attempted in read-only mode", action="FILE_SAVE_READONLY")
         return
 
@@ -345,7 +396,11 @@ def _do_save(ctx, path: Path):
         )
 
     except PermissionError as e:
-        ctx.status.error(f"(File): Permission denied — {path.name}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\nPermission denied.\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -358,7 +413,11 @@ def _do_save(ctx, path: Path):
         )
 
     except IsADirectoryError as e:
-        ctx.status.error(f"(File): Path is a directory — {path}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path}\".\nPath is a directory.\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -367,7 +426,11 @@ def _do_save(ctx, path: Path):
         )
 
     except OSError as e:
-        ctx.status.error(f"(File): Save failed — {e}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\n{e}\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -380,7 +443,11 @@ def _do_save(ctx, path: Path):
         )
 
     except Exception as e:
-        ctx.status.error(f"(File): Save failed — {e}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\n{e}\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",

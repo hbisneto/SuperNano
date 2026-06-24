@@ -15,6 +15,7 @@ from ..services.log_service import LogService
 from ..services.session_manager import SessionManager
 from ..core.__version__ import VERSION
 from nannokit.dialogs.core.manager import DialogManager
+from nannokit.dialogs import messagebox
 
 
 class AppContext:
@@ -147,20 +148,22 @@ class AppContext:
         if self.editor:
             self.editor_state.mark_saved(self.editor.text)
 
-    def check_dirty_before(self, action, message: str = "(Editor): Unsaved changes") -> bool:
+    def check_dirty_before(self, action, message: str = "You have unsaved changes. Continue anyway?") -> bool:
         if not self.is_dirty:
             action()
-            self.clear_pending_action()
             return True
 
-        if self.pending_action is not None:
-            self.pending_action()
-            self.pending_action = None
-            action()
-            return True
+        def on_result(result):
+            if result == "Yes":
+                action()
 
-        self.pending_action = action
-        self.status.warning(f"{message} — press again to confirm")
+        messagebox.show(
+            message,
+            title="Unsaved Changes",
+            buttons=messagebox.buttons.YES_NO,
+            type=messagebox.type.WARNING,
+            callback=on_result,
+        )
         return False
 
     def clear_pending_action(self):
