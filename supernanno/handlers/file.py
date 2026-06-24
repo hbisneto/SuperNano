@@ -5,6 +5,7 @@ from textual.widgets import Input
 from ..core.file_manager import FileManager
 from ..ui.bindings import IS_WELCOME_TEXT
 from nannokit.dialogs import OpenPath
+from nannokit.dialogs import messagebox
 
 def is_welcome_content(text: str) -> bool:
     return text.strip() == IS_WELCOME_TEXT
@@ -295,6 +296,12 @@ def _do_read(ctx, value: str):
 
 def save(ctx):
     if ctx.read_only:
+        messagebox.show(
+            "Cannot save in read-only mode",
+            "SuperNanno Mode: (READ ONLY)",
+            messagebox.buttons.OK,
+            messagebox.type.INFO
+        )
         ctx.status.warning("(Editor): Cannot save in read-only mode")
         ctx.logs.warning("(File): Save attempted in read-only mode", action="FILE_SAVE_READONLY")
         return
