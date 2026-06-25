@@ -322,3 +322,9 @@ TabbedContent > .content {
     background: $surface;
     padding: 0;
 }
+
+Tooltip {
+    background: $primary;
+    color: #FFFFFF;
+    text-style: bold;
+}
