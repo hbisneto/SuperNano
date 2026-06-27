@@ -4,13 +4,14 @@ from dataclasses import dataclass
 
 @dataclass
 class CLIArgs:
-    file: str | None = None
-    line: int | None = None
-    column: int = 0
-    search: str | None = None
-    view_mode: bool = False
     backup: bool = False
     backup_dir: str | None = None
+    column: int = 0
+    file: str | None = None
     help: bool = False
-    version: bool = False
     invalid_arg: str | None = None
+    line: int | None = None
+    search: str | None = None
+    view_mode: bool = False
+    version: bool = False
+    show_line_numbers: bool = False # Implement
