@@ -86,6 +86,8 @@ def parse_rc_file(path: Path) -> dict:
             if command == "set":
                 if len(parts) == 2:
                     key = parts[1].lower()
+                    if key in ("linenumbers", "line_numbers", "line-numbers"):
+                        config["linenumbers"] = True
                     if key in OPTIONAL_VALUE_KEYS:
                         config[key] = None
                     else:

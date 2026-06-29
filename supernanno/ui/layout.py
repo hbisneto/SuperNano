@@ -34,11 +34,15 @@ def create_layout() -> tuple:
 
     startup_view = StartupView(WELCOME)
 
-    editor = TextArea.code_editor("", id="editor", language="markdown")
+    editor = TextArea.code_editor(
+        "",
+        id="editor",
+        language="markdown",
+        show_line_numbers=True
+    )
     editor.display = False
     status = Static("SuperNanno Ready", id="status")
     
-
     main_content = Vertical(
         startup_view,
         editor,

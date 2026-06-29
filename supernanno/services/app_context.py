@@ -34,6 +34,7 @@ class AppContext:
         self.read_only               = False
         self.path_display            = "full"
         self.debug_mode              = False
+        self.line_numbers: bool      = True
 
         # ==================== SERVICES ====================
         self.editor_state   = EditorState()
@@ -165,6 +166,55 @@ class AppContext:
     def clear_pending_action(self):
         self.pending_action = None
 
+    # def set_language(self, path: Path):
+    #     ext = path.suffix.lower()
+    #     language_map = {
+    #     ".c":    "c",
+    #     ".cpp":  "cpp",
+    #     ".cs":   "csharp",
+    #     ".css":  "css",
+    #     ".html": "html",
+    #     ".js":   "javascript",
+    #     ".json": "json",
+    #     ".md":   "markdown",
+    #     ".py":   "python",
+    #     ".sh":   "bash",
+    #     ".ts":   "typescript",
+    # }
+
+    #     editor = self.editor
+    #     lang = language_map.get(ext)
+
+    #     if lang:
+    #         try:
+    #             editor.language = lang
+    #         except Exception as e:
+    #             self.logs.debug(f"Failed to set language {lang}: {e}")
+    #             lang = None
+
+    #     # Pygments fallback
+    #     if not lang and editor.text:
+    #         try:
+    #             lexer = guess_lexer(editor.text[:2000])
+    #             alias = lexer.aliases[0] if lexer.aliases else None
+    #             if alias:
+    #                 editor.language = alias
+    #                 lang = alias
+    #         except Exception:
+    #             pass
+
+    #     # CRITICAL: Force re-highlight
+    #     if editor:
+    #         try:
+    #             editor.refresh()                    # basic refresh
+    #             # More aggressive re-render
+    #             if hasattr(editor, "document"):
+    #                 editor.document = editor.document  # triggers re-highlight in many Textual versions
+    #             editor.load_text(editor.text)       # safest brute-force (preserves cursor roughly)
+    #             editor.refresh()
+    #         except Exception as e:
+    #             self.logs.warning(f"Highlight refresh failed: {e}")
+
     def set_language(self, path: Path):
         ext = path.suffix.lower()
 
@@ -215,6 +265,8 @@ class AppContext:
                     pass
 
         try:
+            # current_text = editor.text
+            # editor.load_text(current_text)   # força reparse + highlight
             editor.refresh()
         except Exception:
             pass

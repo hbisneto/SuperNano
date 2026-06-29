@@ -16,6 +16,7 @@ class ConfigApplier:
             "configwatcherinterval": self.apply_config_watcher_interval,
             "debug":                 self.apply_debug,
             "indenttype":            self.apply_indent_type,
+            "linenumbers":          self.apply_line_numbers,
             "operatingdir":          self.apply_operating_dir,
             "pathdisplay":           self.apply_path_display,
             "restoresession":        self.apply_restore_session,
@@ -80,6 +81,15 @@ class ConfigApplier:
                 f"(ConfigApplier): Could not apply indent_type '{value}' — {e}",
                 action="CONFIG_APPLY_INDENT_TYPE",
             )
+
+    def apply_line_numbers(self, value):
+        self.ctx.line_numbers = bool(value)
+        try:
+            if self.ctx.editor:
+                self.ctx.editor.show_line_numbers = self.ctx.line_numbers
+                self.ctx.editor.refresh()          # importante para highlight
+        except Exception as e:
+            self.ctx.logs.warning(f"Failed to apply line_numbers: {e}")
 
     def apply_operating_dir(self, value):
         if not value:

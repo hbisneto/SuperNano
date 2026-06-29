@@ -90,9 +90,9 @@ def load(ctx, path_str: str, silent: bool = False):
             ctx.app._loading = False
 
             ctx.current_path = path
-            ctx.set_language(path)
             ctx.editor.read_only = ctx.read_only
             ctx.mark_clean()
+            ctx.set_language(path)
             ctx.save_session_state(path)
 
             ctx.editor.focus()

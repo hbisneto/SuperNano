@@ -14,4 +14,5 @@ class CLIArgs:
     search: str | None = None
     view_mode: bool = False
     version: bool = False
-    show_line_numbers: bool = False # Implement
+    
+    line_numbers: bool = True

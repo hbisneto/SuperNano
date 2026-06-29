@@ -47,6 +47,11 @@ def parse_cli_args() -> CLIArgs:
             i += 1
             continue
 
+        if arg in ("-l", "--line-numbers"):
+            result.line_numbers = True
+            i += 1
+            continue
+
         if arg.startswith("+"):
             # +LINE ou +LINE,COLUMN ou +/SEARCH
             rest = arg[1:]

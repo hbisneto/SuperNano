@@ -1,9 +1,6 @@
 # app.py
 
 import asyncio
-# import os
-# import platform
-# import subprocess
 import sys
 from .cli.constants import HELP_TEXT
 from .cli.constants import VERSION
@@ -74,6 +71,10 @@ class SuperNanno(App):
                 self.ctx.read_only = True
             if cli_args.file:
                 self.ctx.current_path = Path(cli_args.file)
+            if hasattr(cli_args, 'line_numbers') and cli_args.line_numbers:
+                self.ctx.line_numbers = True
+            # if cli_args.line_numbers:
+            #     self.ctx.line_numbers = True
 
     def compose(self) -> ComposeResult:
         (
