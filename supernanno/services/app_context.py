@@ -166,110 +166,117 @@ class AppContext:
     def clear_pending_action(self):
         self.pending_action = None
 
-    # def set_language(self, path: Path):
-    #     ext = path.suffix.lower()
-    #     language_map = {
-    #     ".c":    "c",
-    #     ".cpp":  "cpp",
-    #     ".cs":   "csharp",
-    #     ".css":  "css",
-    #     ".html": "html",
-    #     ".js":   "javascript",
-    #     ".json": "json",
-    #     ".md":   "markdown",
-    #     ".py":   "python",
-    #     ".sh":   "bash",
-    #     ".ts":   "typescript",
-    # }
-
-    #     editor = self.editor
-    #     lang = language_map.get(ext)
-
-    #     if lang:
-    #         try:
-    #             editor.language = lang
-    #         except Exception as e:
-    #             self.logs.debug(f"Failed to set language {lang}: {e}")
-    #             lang = None
-
-    #     # Pygments fallback
-    #     if not lang and editor.text:
-    #         try:
-    #             lexer = guess_lexer(editor.text[:2000])
-    #             alias = lexer.aliases[0] if lexer.aliases else None
-    #             if alias:
-    #                 editor.language = alias
-    #                 lang = alias
-    #         except Exception:
-    #             pass
-
-    #     # CRITICAL: Force re-highlight
-    #     if editor:
-    #         try:
-    #             editor.refresh()                    # basic refresh
-    #             # More aggressive re-render
-    #             if hasattr(editor, "document"):
-    #                 editor.document = editor.document  # triggers re-highlight in many Textual versions
-    #             editor.load_text(editor.text)       # safest brute-force (preserves cursor roughly)
-    #             editor.refresh()
-    #         except Exception as e:
-    #             self.logs.warning(f"Highlight refresh failed: {e}")
-
     def set_language(self, path: Path):
-        ext = path.suffix.lower()
+        """Define linguagem e força re-highlight (essencial para CLI + --linenumbers)"""
+        if not path or not hasattr(self, 'editor') or not self.editor:
+            return
 
+        ext = path.suffix.lower()
         language_map = {
-            ".c":    "c",
-            ".cpp":  "cpp",
-            ".cs":   "csharp",
-            ".css":  "css",
-            ".html": "html",
-            ".js":   "javascript",
-            ".json": "json",
-            ".md":   "markdown",
-            ".py":   "python",
-            ".sh":   "bash",
-            ".ts":   "typescript",
+            ".py": "python", ".js": "javascript", ".ts": "typescript",
+            ".html": "html", ".css": "css", ".json": "json",
+            ".md": "markdown", ".sh": "bash", ".rs": "rust",
+            ".go": "go", ".java": "java", ".sql": "sql",
+            ".xml": "xml", ".toml": "toml", ".yaml": "yaml", ".yml": "yaml",
+            # adicione mais conforme necessário
         }
 
-        editor = self.editor
-        lang   = language_map.get(ext)
+        lang = language_map.get(ext)
 
         try:
-            editor.language = lang
+            # 1. Define linguagem
+            if lang:
+                self.editor.language = lang
+            else:
+                # Fallback Pygments
+                try:
+                    lexer = guess_lexer(self.editor.text[:2000] if self.editor.text else "")
+                    alias = lexer.aliases[0] if lexer.aliases else None
+                    if alias:
+                        self.editor.language = alias
+                except Exception:
+                    self.editor.language = None
+
+            # 2. Força re-highlight (CRÍTICO)
+            current_text = self.editor.text
+            current_cursor = self.editor.cursor_location
+
+            self.editor.load_text(current_text)   # força reparse + highlight
+            self.editor.cursor_location = current_cursor
+
+            # 3. Atualiza line numbers
+            if hasattr(self, 'line_numbers'):
+                self.editor.show_line_numbers = self.line_numbers
+
+            self.editor.refresh()
+            self.app.call_after_refresh(self.editor.refresh)
+
+            self.logs.info(f"Language set to {self.editor.language} for {path.name}",
+                            action="SET_LANGUAGE")
+
         except Exception as e:
-            self.logs.debug(
-                f"(AppContext): Could not set language '{lang}' for '{path.suffix}' — {e}",
-                action="SET_LANGUAGE",
-                path=path,
-            )
+            self.logs.warning(f"Failed to set language for {path}: {e}",
+                            action="SET_LANGUAGE_ERROR")
             try:
-                editor.language = None
+                self.editor.refresh()
             except Exception:
                 pass
 
-        if not getattr(editor, "language", None):
-            try:
-                lexer = guess_lexer(editor.text[:1000])
-                alias = lexer.aliases[0] if lexer.aliases else None
-                editor.language = alias
-            except Exception as e:
-                self.logs.debug(
-                    f"(AppContext): Pygments lexer detection failed — {e}",
-                    action="SET_LANGUAGE_PYGMENTS",
-                    path=path,
-                )
-                try:
-                    editor.language = None
-                except Exception:
-                    pass
+    # def set_language(self, path: Path):
+    #     ext = path.suffix.lower()
 
-        try:
-            # current_text = editor.text
-            # editor.load_text(current_text)   # força reparse + highlight
-            editor.refresh()
-        except Exception:
-            pass
+    #     language_map = {
+    #         ".c":    "c",
+    #         ".cpp":  "cpp",
+    #         ".cs":   "csharp",
+    #         ".css":  "css",
+    #         ".html": "html",
+    #         ".js":   "javascript",
+    #         ".json": "json",
+    #         ".md":   "markdown",
+    #         ".py":   "python",
+    #         ".sh":   "bash",
+    #         ".ts":   "typescript",
+    #     }
+
+    #     editor = self.editor
+    #     lang   = language_map.get(ext)
+
+    #     try:
+    #         editor.language = lang
+    #     except Exception as e:
+    #         self.logs.debug(
+    #             f"(AppContext): Could not set language '{lang}' for '{path.suffix}' — {e}",
+    #             action="SET_LANGUAGE",
+    #             path=path,
+    #         )
+    #         try:
+    #             editor.language = None
+    #         except Exception:
+    #             pass
+
+    #     if not getattr(editor, "language", None):
+    #         try:
+    #             lexer = guess_lexer(editor.text[:1000])
+    #             alias = lexer.aliases[0] if lexer.aliases else None
+    #             editor.language = alias
+    #         except Exception as e:
+    #             self.logs.debug(
+    #                 f"(AppContext): Pygments lexer detection failed — {e}",
+    #                 action="SET_LANGUAGE_PYGMENTS",
+    #                 path=path,
+    #             )
+    #             try:
+    #                 editor.language = None
+    #             except Exception:
+    #                 pass
+
+    #     try:
+    #         # current_text = editor.text
+    #         # editor.load_text(current_text)   # força reparse + highlight
+    #         editor.refresh()
+    #     except Exception:
+    #         pass
 
     def save_session_state(self, file_path: "Path | str"):
         if getattr(self.app, "explicit_file_open", False) or not file_path:

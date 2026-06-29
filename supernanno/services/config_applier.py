@@ -87,7 +87,8 @@ class ConfigApplier:
         try:
             if self.ctx.editor:
                 self.ctx.editor.show_line_numbers = self.ctx.line_numbers
-                self.ctx.editor.refresh()          # importante para highlight
+                # Força refresh + highlight
+                self.ctx.set_language(self.ctx.current_path) if self.ctx.current_path else self.ctx.editor.refresh()
         except Exception as e:
             self.ctx.logs.warning(f"Failed to apply line_numbers: {e}")
 

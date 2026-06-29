@@ -156,6 +156,10 @@ class SuperNanno(App):
         self.apply_startup_policy()
         self.ctx.status.default()
 
+        # Força highlight inicial
+        if self.ctx.current_path:
+            self.ctx.set_language(self.ctx.current_path)
+
         if self.ctx.config_watcher:
             self.ctx.logs.info(
                 "(App): Config watcher starting",

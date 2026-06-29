@@ -37,9 +37,15 @@ def create_layout() -> tuple:
     editor = TextArea.code_editor(
         "",
         id="editor",
-        language="markdown",
+        language=None,
         show_line_numbers=True
     )
+    # editor = TextArea.code_editor(
+    #     "",
+    #     id="editor",
+    #     language="markdown",
+    #     show_line_numbers=True
+    # )
     editor.display = False
     status = Static("SuperNanno Ready", id="status")
     
