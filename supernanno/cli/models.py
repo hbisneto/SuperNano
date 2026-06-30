@@ -15,4 +15,4 @@ class CLIArgs:
     view_mode: bool = False
     version: bool = False
     
-    line_numbers: bool = True
+    line_numbers: bool = None

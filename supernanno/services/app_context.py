@@ -167,60 +167,90 @@ class AppContext:
         self.pending_action = None
 
     def set_language(self, path: Path):
-        """Define linguagem e força re-highlight (essencial para CLI + --linenumbers)"""
+        """Define a linguagem do arquivo e força re-highlight.
+        Preserva configurações visuais como line_numbers."""
         if not path or not hasattr(self, 'editor') or not self.editor:
             return
 
         ext = path.suffix.lower()
         language_map = {
-            ".py": "python", ".js": "javascript", ".ts": "typescript",
-            ".html": "html", ".css": "css", ".json": "json",
-            ".md": "markdown", ".sh": "bash", ".rs": "rust",
-            ".go": "go", ".java": "java", ".sql": "sql",
-            ".xml": "xml", ".toml": "toml", ".yaml": "yaml", ".yml": "yaml",
-            # adicione mais conforme necessário
+            ".py": "python",
+            ".js": "javascript",
+            ".ts": "typescript",
+            ".html": "html",
+            ".css": "css",
+            ".json": "json",
+            ".md": "markdown",
+            ".sh": "bash",
+            ".rs": "rust",
+            ".go": "go",
+            ".java": "java",
+            ".sql": "sql",
+            ".xml": "xml",
+            ".toml": "toml",
+            ".yaml": "yaml",
+            ".yml": "yaml",
+            ".c": "c",
+            ".cpp": "cpp",
+            ".cs": "csharp",
+            # Adicione mais conforme necessário
         }
 
+        editor = self.editor
         lang = language_map.get(ext)
 
         try:
-            # 1. Define linguagem
+            # 1. Tenta definir via mapa de extensão (mais confiável)
             if lang:
-                self.editor.language = lang
+                editor.language = lang
             else:
-                # Fallback Pygments
+                # 2. Fallback com Pygments
                 try:
-                    lexer = guess_lexer(self.editor.text[:2000] if self.editor.text else "")
+                    text_sample = editor.text[:2000] if getattr(editor, 'text', None) else ""
+                    lexer = guess_lexer(text_sample)
                     alias = lexer.aliases[0] if lexer.aliases else None
                     if alias:
-                        self.editor.language = alias
+                        editor.language = alias
                 except Exception:
-                    self.editor.language = None
+                    editor.language = None
 
-            # 2. Força re-highlight (CRÍTICO)
-            current_text = self.editor.text
-            current_cursor = self.editor.cursor_location
+            # 3. Garantia extra (caso o fallback acima falhe)
+            if not getattr(editor, "language", None):
+                try:
+                    lexer = guess_lexer(editor.text[:1000] if getattr(editor, 'text', None) else "")
+                    alias = lexer.aliases[0] if lexer.aliases else None
+                    if alias:
+                        editor.language = alias
+                except Exception:
+                    pass
 
-            self.editor.load_text(current_text)   # força reparse + highlight
-            self.editor.cursor_location = current_cursor
-
-            # 3. Atualiza line numbers
-            if hasattr(self, 'line_numbers'):
-                self.editor.show_line_numbers = self.line_numbers
-
-            self.editor.refresh()
-            self.app.call_after_refresh(self.editor.refresh)
-
-            self.logs.info(f"Language set to {self.editor.language} for {path.name}",
-                            action="SET_LANGUAGE")
-
-        except Exception as e:
-            self.logs.warning(f"Failed to set language for {path}: {e}",
-                            action="SET_LANGUAGE_ERROR")
+            # === PRESERVA LINE NUMBERS (importante!) ===
             try:
-                self.editor.refresh()
+                if hasattr(self, 'line_numbers'):
+                    show = bool(self.line_numbers)
+                    
+                    if hasattr(editor, "show_line_numbers"):
+                        editor.show_line_numbers = show
+                    elif hasattr(editor, "gutter"):
+                        if hasattr(editor.gutter, "show_line_numbers"):
+                            editor.gutter.show_line_numbers = show
+                        elif hasattr(editor.gutter, "_show_line_numbers"):
+                            editor.gutter._show_line_numbers = show
+            except Exception as e:
+                self.logs.debug(f"Could not preserve line_numbers setting: {e}")
+
+            # Refresh final (mantém highlighting + line numbers)
+            try:
+                editor.refresh()
             except Exception:
                 pass
+
+        except Exception as e:
+            self.logs.warning(
+                f"(AppContext): Failed to set language for {path} — {e}",
+                action="SET_LANGUAGE",
+                path=path,
+            )
 
     # def set_language(self, path: Path):
     #     ext = path.suffix.lower()

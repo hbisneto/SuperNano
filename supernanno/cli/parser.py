@@ -47,8 +47,21 @@ def parse_cli_args() -> CLIArgs:
             i += 1
             continue
 
+        # NEW
         if arg in ("-l", "--line-numbers"):
-            result.line_numbers = True
+            # Support --line-numbers=true / --line-numbers=false / --line-numbers (toggle)
+            if i + 1 < len(args) and args[i + 1].lower() in ("true", "false", "1", "0", "on", "off"):
+                val = args[i + 1].lower() in ("true", "1", "on")
+                result.line_numbers = val
+                i += 2
+            else:
+                result.line_numbers = True  # flag presence = enable
+                i += 1
+            continue
+
+        if arg.startswith("--line-numbers="):
+            val_str = arg.split("=", 1)[1].lower()
+            result.line_numbers = val_str in ("true", "1", "on", "yes")
             i += 1
             continue
 

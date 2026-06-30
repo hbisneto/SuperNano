@@ -83,14 +83,51 @@ class ConfigApplier:
             )
 
     def apply_line_numbers(self, value):
-        self.ctx.line_numbers = bool(value)
+        """Aplica visibilidade dos números de linha sem quebrar highlighting."""
         try:
-            if self.ctx.editor:
-                self.ctx.editor.show_line_numbers = self.ctx.line_numbers
-                # Força refresh + highlight
-                self.ctx.set_language(self.ctx.current_path) if self.ctx.current_path else self.ctx.editor.refresh()
+            show = bool(value)
+            self.ctx.line_numbers = show
+            
+            editor = getattr(self.ctx, 'editor', None)
+            if not editor:
+                return
+
+            # Tenta vários caminhos comuns no Textual
+            changed = False
+            
+            if hasattr(editor, "show_line_numbers"):
+                if editor.show_line_numbers != show:
+                    editor.show_line_numbers = show
+                    changed = True
+                    
+            elif hasattr(editor, "gutter"):
+                if hasattr(editor.gutter, "show_line_numbers"):
+                    if getattr(editor.gutter, "show_line_numbers", None) != show:
+                        editor.gutter.show_line_numbers = show
+                        changed = True
+                # Alguns widgets têm _line_numbers ou similar
+                elif hasattr(editor.gutter, "_show_line_numbers"):
+                    editor.gutter._show_line_numbers = show
+                    changed = True
+
+            # Força refresh sem perder highlighting
+            if changed:
+                try:
+                    editor.refresh()
+                    # Reaplica linguagem se necessário
+                    if hasattr(editor, "language") and editor.language:
+                        # Isso força o highlighter a ser reavaliado
+                        editor._highlight_timer = None  # força re-highlight em alguns casos
+                except Exception:
+                    pass
+
+            self.ctx.logs.debug(f"Line numbers set to: {show}")
+            
         except Exception as e:
-            self.ctx.logs.warning(f"Failed to apply line_numbers: {e}")
+            self.ctx.logs.warning(
+                f"(ConfigApplier): Could not apply linenumbers — {e}",
+                action="CONFIG_APPLY_LINE_NUMBERS",
+            )
 
     def apply_operating_dir(self, value):
         if not value:

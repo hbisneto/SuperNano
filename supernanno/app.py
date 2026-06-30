@@ -71,8 +71,11 @@ class SuperNanno(App):
                 self.ctx.read_only = True
             if cli_args.file:
                 self.ctx.current_path = Path(cli_args.file)
-            if hasattr(cli_args, 'line_numbers') and cli_args.line_numbers:
-                self.ctx.line_numbers = True
+            # NOVO - Line numbers (CLI tem prioridade)
+            if cli_args.line_numbers is not None:
+                self.ctx.line_numbers = cli_args.line_numbers
+            # if hasattr(cli_args, 'line_numbers') and cli_args.line_numbers:
+            #     self.ctx.line_numbers = True
             # if cli_args.line_numbers:
             #     self.ctx.line_numbers = True
 
@@ -156,7 +159,7 @@ class SuperNanno(App):
         self.apply_startup_policy()
         self.ctx.status.default()
 
-        # Força highlight inicial
+        # Força highlight inicial (depois das configs)
         if self.ctx.current_path:
             self.ctx.set_language(self.ctx.current_path)
 
