@@ -10,6 +10,7 @@ CLI_OPTIONS = [
   ("-v", "--view", "Open file in read-only mode"),
   ("-B", "--backup", "Save backups of existing files"),
   ("-C <dir>", "--backupdir=<dir>", "Directory for backup files"),
+  ("-l", "--line-numbers", "Show/hide line numbers (default: on)"),
 ]
 
 def build_help():

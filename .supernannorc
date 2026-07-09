@@ -12,3 +12,4 @@ set sidebar
 set sidebarwidth 35
 set tabbehavior indent
 set tabsize 4
+set linenumbers

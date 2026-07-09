@@ -60,9 +60,9 @@ def _do_new(ctx):
     ctx.status.persist("(File): New file")
     ctx.logs.info("(File): New file created", action="FILE_NEW")
 
-# ======================================== xxx ========================================
+# ======================================== TODO ========================================
 # Old manual input version can stay for fallback: Will become an option feature via .rc
-# ======================================== xxx ========================================
+# ======================================== TODO ========================================
 def open(ctx):
     input_w = ctx.app.query_one("#path_input", Input)
     input_w.display = True
@@ -74,35 +74,89 @@ def open(ctx):
         ctx.path_container.display = True
 
     ctx.status.persist("(Path): Enter path to open file or folder")
-# ======================================== xxx ========================================
+# ======================================== TODO ========================================
 # Old manual input version can stay for fallback: Will become an option feature via .rc
-# ======================================== xxx ========================================
+# ======================================== TODO ========================================
 
 def open_with_dialog(ctx):
-    """New dialog-based open."""
-    def callback(result: "Path | list[Path] | None"):
-        if not result:
-            ctx.status.info("(Open): Cancelled")
-            return
+    """Abre diálogo de seleção com verificação de dirty state ANTES (evita nesting)."""
+    
+    def do_open() -> None:
+        """Realmente abre o OpenPath (chamado após decisão do usuário)."""
+        def callback(result: "Path | list[Path] | None"):
+            if not result:
+                ctx.status.info("(Open): Cancelled")
+                return
 
-        paths = result if isinstance(result, list) else [result]
+            paths = result if isinstance(result, list) else [result]
 
-        for p in paths:
-            if p.is_dir():
-                ctx.directory_tree.path = str(p)
-                ctx.directory_tree.reload()
-                ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
-            elif p.is_file():
-                # Reuse your existing load logic
-                load(ctx, str(p))
+            for p in paths:
+                if p.is_dir():
+                    ctx.directory_tree.path = str(p)
+                    ctx.directory_tree.reload()
+                    ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
+                elif p.is_file():
+                    load(ctx, str(p))          # load já tem sua própria proteção de dirty
+                else:
+                    ctx.status.warning(f"Invalid path: {p}")
+
+        OpenPath.show(
+            initial_directory=ctx.config.get("operatingdir", Path.home()),
+            callback=callback,
+        )
+
+    # ==================== DIRTY STATE CHECK ====================
+    if not ctx.is_dirty:
+        do_open()
+        return
+
+    # Se estiver dirty, mostra MessageBox ANTES de abrir OpenPath
+    def on_save_choice(result: str | None):
+        if result == "Yes":
+            if ctx.current_path:
+                _do_save(ctx, ctx.current_path)
             else:
-                ctx.status.warning(f"Invalid path: {p}")
+                save_as(ctx)
+            # Só abre o diálogo depois que o save/save_as terminar
+            do_open()
+        elif result == "No":
+            ctx.mark_clean()
+            do_open()
+        # Cancel → não faz nada (deixa o editor como está)
 
-    OpenPath.show(
-        initial_directory=Path.home(),
-        callback=callback,
+    messagebox.show(
+        "Save changes before opening a new file?",
+        title="Unsaved Changes",
+        buttons=messagebox.buttons.YES_NO_CANCEL,
+        type=messagebox.type.WARNING,
+        callback=on_save_choice,
     )
 
+# def open_with_dialog(ctx):
+#     """New dialog-based open."""
+#     def callback(result: "Path | list[Path] | None"):
+#         if not result:
+#             ctx.status.info("(Open): Cancelled")
+#             return
+
+#         paths = result if isinstance(result, list) else [result]
+
+#         for p in paths:
+#             if p.is_dir():
+#                 ctx.directory_tree.path = str(p)
+#                 ctx.directory_tree.reload()
+#                 ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
+#             elif p.is_file():
+#                 # Reuse your existing load logic
+#                 load(ctx, str(p))
+#             else:
+#                 ctx.status.warning(f"Invalid path: {p}")
+
+#     OpenPath.show(
+#         # TODO: Add support to change the initial directory via .supernannorc in the future
+#         initial_directory=Path.home(),
+#         callback=callback,
+#     )
 
 def load(ctx, path_str: str, silent: bool = False):
     path = Path(path_str).expanduser().resolve()
@@ -145,13 +199,11 @@ def load(ctx, path_str: str, silent: bool = False):
             ctx.app._loading = True
             ctx.editor.load_text(content)
             ctx.app._loading = False
-
             ctx.current_path = path
-            ctx.set_language(path)
             ctx.editor.read_only = ctx.read_only
             ctx.mark_clean()
+            ctx.set_language(path)
             ctx.save_session_state(path)
-
             ctx.editor.focus()
 
             if not silent:
@@ -244,9 +296,32 @@ def load(ctx, path_str: str, silent: bool = False):
                 event_origin="load",
             )
 
-    if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
+    if ctx.is_dirty:
+        def on_save_choice(result: str | None):
+            if result == "Yes":
+                if ctx.current_path:
+                    _do_save(ctx, ctx.current_path)  # salva atual
+                else:
+                    save_as(ctx)  # pede save as se for novo
+                do_load()  # depois abre o novo
+            elif result == "No":
+                ctx.mark_clean()  # descarta mudanças
+                do_load()
+            # Cancel / None → não faz nada
+
+        messagebox.show(
+            "Save changes before opening a new file?",
+            title="Unsaved Changes",
+            buttons=messagebox.buttons.YES_NO_CANCEL,
+            type=messagebox.type.WARNING,
+            callback=on_save_choice,
+        )
         return
 
+    # Sem dirty → carrega direto
+    do_load()
+    # if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
+    #     return
 
 def read(ctx, value: "str | None" = None):
     if value is None:
@@ -265,7 +340,6 @@ def read(ctx, value: "str | None" = None):
         return
 
     _do_read(ctx, value)
-
 
 def _do_read(ctx, value: str):
     path = Path(value).expanduser()
@@ -345,7 +419,6 @@ def _do_read(ctx, value: str):
             event_origin="read",
         )
 
-
 def save(ctx):
     if ctx.read_only:
         messagebox.show(
@@ -362,10 +435,8 @@ def save(ctx):
     else:
         save_as(ctx)
 
-
 def save_as(ctx):
     ctx.app.prompt_save_as()
-
 
 def _do_save(ctx, path: Path):
     try:

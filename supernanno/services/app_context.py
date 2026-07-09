@@ -16,6 +16,10 @@ from ..services.session_manager import SessionManager
 from ..core.__version__ import VERSION
 from nannokit.dialogs.core.manager import DialogManager
 from nannokit.dialogs import messagebox
+from ..handlers.file import(
+    _do_save, 
+    save_as
+)
 
 
 class AppContext:
@@ -28,14 +32,15 @@ class AppContext:
         self.pending_action = None
 
         # ==================== SETTINGS ====================
+        self.backup_dir: "Path | None" = None
+        self.backup_enabled          = False
         self.config_watcher          = True
         self.config_watcher_interval = 1
-        self.restore_session         = True
-        self.backup_enabled          = False
-        self.backup_dir: "Path | None" = None
-        self.read_only               = False
-        self.path_display            = "full"
         self.debug_mode              = False
+        self.line_numbers: bool = True
+        self.path_display            = "full"
+        self.read_only               = False
+        self.restore_session         = True
 
         # ==================== SERVICES ====================
         self.editor_state   = EditorState()
@@ -148,80 +153,169 @@ class AppContext:
         if self.editor:
             self.editor_state.mark_saved(self.editor.text)
 
-    def check_dirty_before(self, action, message: str = "You have unsaved changes. Continue anyway?") -> bool:
+    def check_dirty_before(self, proceed_callback, message: str = "You have unsaved changes. Continue?") -> bool:
+        """Retorna True se prosseguiu imediatamente, False se mostrou diálogo."""
         if not self.is_dirty:
-            action()
+            proceed_callback()
             return True
 
-        def on_result(result):
+        def on_result(result: str | None):
             if result == "Yes":
-                action()
+                if self.current_path:
+                    _do_save(self, self.current_path)  # definido em file.py
+                else:
+                    save_as(self)  # pede save as
+                proceed_callback()
+            elif result == "No":
+                self.mark_clean()
+                proceed_callback()
 
         messagebox.show(
             message,
             title="Unsaved Changes",
-            buttons=messagebox.buttons.YES_NO,
+            buttons=messagebox.buttons.YES_NO_CANCEL,
             type=messagebox.type.WARNING,
             callback=on_result,
         )
         return False
 
+    # def check_dirty_before(self, action, message: str = "You have unsaved changes. Continue anyway?") -> bool:
+    #     if not self.is_dirty:
+    #         action()
+    #         return True
+
+    #     def on_result(result):
+    #         if result == "Yes":
+    #             action()
+
+    #     messagebox.show(
+    #         message,
+    #         title="Unsaved Changes",
+    #         buttons=messagebox.buttons.YES_NO,
+    #         type=messagebox.type.WARNING,
+    #         callback=on_result,
+    #     )
+    #     return False
+
     def clear_pending_action(self):
         self.pending_action = None
 
     def set_language(self, path: Path):
-        ext = path.suffix.lower()
+        """Define a linguagem do editor.
+
+        Fluxo:
+            1. Resolve pela extensão.
+            2. Caso não exista, tenta detectar com Pygments.
+            3. Preserva configurações visuais.
+            4. Atualiza o editor.
+
+        Futuramente esta rotina poderá ser dividida em:
+
+            resolve_language()
+            apply_language()
+            restore_editor_options()
+            ensure_highlighting()
+
+        caso o Textual exija algum workaround específico.
+        """
+
+        editor = self.editor
+
+        if path is None or editor is None:
+            return
 
         language_map = {
             ".c":    "c",
             ".cpp":  "cpp",
             ".cs":   "csharp",
             ".css":  "css",
+            ".go":   "go",
             ".html": "html",
+            ".java": "java",
             ".js":   "javascript",
             ".json": "json",
             ".md":   "markdown",
             ".py":   "python",
+            ".rs":   "rust",
             ".sh":   "bash",
+            ".sql":  "sql",
+            ".toml": "toml",
             ".ts":   "typescript",
+            ".xml":  "xml",
+            ".yaml": "yaml",
+            ".yml":  "yaml",
         }
 
-        editor = self.editor
-        lang   = language_map.get(ext)
+        ext = path.suffix.lower()
+        lang = language_map.get(ext)
 
-        try:
-            editor.language = lang
-        except Exception as e:
-            self.logs.debug(
-                f"(AppContext): Could not set language '{lang}' for '{path.suffix}' — {e}",
-                action="SET_LANGUAGE",
-                path=path,
-            )
+        if lang:
             try:
-                editor.language = None
-            except Exception:
-                pass
+                editor.language = lang
+            except Exception as e:
+                self.logs.debug(
+                    f"(AppContext): Could not set language '{lang}' "
+                    f"for '{path.suffix}' — {e}",
+                    action="SET_LANGUAGE",
+                    path=path,
+                )
+
+                try:
+                    editor.language = None
+                except Exception:
+                    pass
 
         if not getattr(editor, "language", None):
             try:
-                lexer = guess_lexer(editor.text[:1000])
+                sample = editor.text[:2000] if editor.text else ""
+
+                lexer = guess_lexer(sample)
                 alias = lexer.aliases[0] if lexer.aliases else None
-                editor.language = alias
+
+                if alias:
+                    editor.language = alias
+
             except Exception as e:
                 self.logs.debug(
                     f"(AppContext): Pygments lexer detection failed — {e}",
                     action="SET_LANGUAGE_PYGMENTS",
                     path=path,
                 )
+
                 try:
                     editor.language = None
                 except Exception:
                     pass
 
         try:
+            if hasattr(editor, "show_line_numbers"):
+                editor.show_line_numbers = bool(self.line_numbers)
+        except Exception as e:
+            self.logs.debug(
+                f"(AppContext): Could not restore line numbers — {e}",
+                action="SET_LANGUAGE_OPTIONS",
+            )
+
+        try:
             editor.refresh()
-        except Exception:
-            pass
+        except Exception as e:
+            self.logs.debug(
+                f"(AppContext): Refresh after language change failed — {e}",
+                action="SET_LANGUAGE_REFRESH",
+            )
+
+        # ------------------------------------------------------------------
+        # TODO:
+        #
+        # O Textual pode exigir um "rehighlight" após load_text().
+        #
+        # Caso seja confirmado como comportamento interno do Textual,
+        # criar um método privado:
+        #
+        #     _ensure_highlighting()
+        #
+        # sem alterar esta rotina.
+        # ------------------------------------------------------------------
 
     def save_session_state(self, file_path: "Path | str"):
         if getattr(self.app, "explicit_file_open", False) or not file_path:

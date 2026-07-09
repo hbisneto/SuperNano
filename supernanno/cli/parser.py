@@ -1,5 +1,7 @@
 # cli/parser.py
 
+### CLI always overrides config file settings, so we need to parse CLI args before loading config.
+
 import sys
 from ..cli.models import CLIArgs
 
@@ -47,8 +49,26 @@ def parse_cli_args() -> CLIArgs:
             i += 1
             continue
 
+        # ==================== LINE NUMBERS ====================
+        # Supported:
+        #   -l
+        #   --linenumbers
+        #   --no-linenumbers
+        #
+        # Default:
+        #   None -> configuration/default
+        if arg in ("-l", "--linenumbers"):
+            result.line_numbers = True
+            i += 1
+            continue
+
+        if arg == "--no-linenumbers":
+            result.line_numbers = False
+            i += 1
+            continue
+
+        # +LINE ou +LINE,COLUMN ou +/SEARCH
         if arg.startswith("+"):
-            # +LINE ou +LINE,COLUMN ou +/SEARCH
             rest = arg[1:]
 
             if rest.startswith("/"):
@@ -65,7 +85,6 @@ def parse_cli_args() -> CLIArgs:
                         f"supernanno: invalid line number '{line_str}' in argument '{arg}'",
                         file=sys.stderr,
                     )
-                    # Mantém line=None, não aborta a abertura do arquivo
 
                 try:
                     result.column = int(col_str)
@@ -74,7 +93,7 @@ def parse_cli_args() -> CLIArgs:
                         f"supernanno: invalid column number '{col_str}' in argument '{arg}'",
                         file=sys.stderr,
                     )
-                    result.column = 0  # Fallback seguro
+                    result.column = 0
             else:
                 try:
                     result.line = int(rest)
@@ -83,8 +102,6 @@ def parse_cli_args() -> CLIArgs:
                         f"supernanno: invalid line number '{rest}' in argument '{arg}'",
                         file=sys.stderr,
                     )
-                    # Mantém line=None
-
             i += 1
             continue
 
@@ -92,7 +109,6 @@ def parse_cli_args() -> CLIArgs:
             result.invalid_arg = arg
             return result
 
-        # Arquivo posicional
         result.file = arg
         i += 1
 
