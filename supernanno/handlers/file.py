@@ -4,8 +4,8 @@ from pathlib import Path
 from textual.widgets import Input
 from ..core.file_manager import FileManager
 from ..ui.bindings import IS_WELCOME_TEXT
-from nannokit.dialogs import OpenPath
-from nannokit.dialogs import messagebox
+from nannokit.dialogs.filedialogs import OpenPath
+from nannokit.dialogs.messagebox import messagebox
 
 def is_welcome_content(text: str) -> bool:
     return text.strip() == IS_WELCOME_TEXT
@@ -96,7 +96,7 @@ def open_with_dialog(ctx):
                     ctx.directory_tree.reload()
                     ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
                 elif p.is_file():
-                    load(ctx, str(p))          # load já tem sua própria proteção de dirty
+                    load(ctx, str(p))
                 else:
                     ctx.status.warning(f"Invalid path: {p}")
 
@@ -131,32 +131,6 @@ def open_with_dialog(ctx):
         type=messagebox.type.WARNING,
         callback=on_save_choice,
     )
-
-# def open_with_dialog(ctx):
-#     """New dialog-based open."""
-#     def callback(result: "Path | list[Path] | None"):
-#         if not result:
-#             ctx.status.info("(Open): Cancelled")
-#             return
-
-#         paths = result if isinstance(result, list) else [result]
-
-#         for p in paths:
-#             if p.is_dir():
-#                 ctx.directory_tree.path = str(p)
-#                 ctx.directory_tree.reload()
-#                 ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
-#             elif p.is_file():
-#                 # Reuse your existing load logic
-#                 load(ctx, str(p))
-#             else:
-#                 ctx.status.warning(f"Invalid path: {p}")
-
-#     OpenPath.show(
-#         # TODO: Add support to change the initial directory via .supernannorc in the future
-#         initial_directory=Path.home(),
-#         callback=callback,
-#     )
 
 def load(ctx, path_str: str, silent: bool = False):
     path = Path(path_str).expanduser().resolve()
@@ -300,12 +274,12 @@ def load(ctx, path_str: str, silent: bool = False):
         def on_save_choice(result: str | None):
             if result == "Yes":
                 if ctx.current_path:
-                    _do_save(ctx, ctx.current_path)  # salva atual
+                    _do_save(ctx, ctx.current_path)
                 else:
-                    save_as(ctx)  # pede save as se for novo
-                do_load()  # depois abre o novo
+                    save_as(ctx)
+                do_load()
             elif result == "No":
-                ctx.mark_clean()  # descarta mudanças
+                ctx.mark_clean()
                 do_load()
             # Cancel / None → não faz nada
 
@@ -318,10 +292,7 @@ def load(ctx, path_str: str, silent: bool = False):
         )
         return
 
-    # Sem dirty → carrega direto
     do_load()
-    # if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
-    #     return
 
 def read(ctx, value: "str | None" = None):
     if value is None:

@@ -10,10 +10,10 @@ BINDINGS = [
     Binding("ctrl+b", "show_hide_sidebar", "Toggle Sidebar", tooltip="Toggle Sidebar Show/Hide", show=True),
     Binding("ctrl+n", "new_file", "New", tooltip="Create a New File", show=True),
     Binding("ctrl+o", "open_path", "Open", tooltip="Open File/Folder", show=True),
-    Binding("ctrl+s", "save", "Save", tooltip="Save the Current File", show=True),  # Teste bem no seu terminal!
+    Binding("ctrl+s", "save", "Save", tooltip="Save the Current File", show=True),
     Binding("ctrl+r", "read_file", "Read File", tooltip="Add Content From Another File to Current File", ),
     Binding("ctrl+f", "search", "Search", tooltip="Search Word in Current File", ),
-    Binding("ctrl+q", "quit", "Quit", tooltip="Quit SuperNanno", show=False, priority=True),  # Já existe no App
+    Binding("ctrl+q", "quit", "Quit", tooltip="Quit SuperNanno", show=False, priority=True),
     Binding("ctrl+x", "report_issue", "Report Issue", tooltip="Report Issue via Github", ),
 ]
 

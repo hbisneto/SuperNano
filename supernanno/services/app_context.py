@@ -21,9 +21,7 @@ from ..handlers.file import(
     save_as
 )
 
-
 class AppContext:
-
     def __init__(self, app):
         self.app = app
         self.dialog_manager = DialogManager()
@@ -162,9 +160,9 @@ class AppContext:
         def on_result(result: str | None):
             if result == "Yes":
                 if self.current_path:
-                    _do_save(self, self.current_path)  # definido em file.py
+                    _do_save(self, self.current_path)
                 else:
-                    save_as(self)  # pede save as
+                    save_as(self)
                 proceed_callback()
             elif result == "No":
                 self.mark_clean()
@@ -178,24 +176,6 @@ class AppContext:
             callback=on_result,
         )
         return False
-
-    # def check_dirty_before(self, action, message: str = "You have unsaved changes. Continue anyway?") -> bool:
-    #     if not self.is_dirty:
-    #         action()
-    #         return True
-
-    #     def on_result(result):
-    #         if result == "Yes":
-    #             action()
-
-    #     messagebox.show(
-    #         message,
-    #         title="Unsaved Changes",
-    #         buttons=messagebox.buttons.YES_NO,
-    #         type=messagebox.type.WARNING,
-    #         callback=on_result,
-    #     )
-    #     return False
 
     def clear_pending_action(self):
         self.pending_action = None

@@ -18,7 +18,6 @@ from .events import (
 )
 from .handlers import (
     new,
-    open_file,
     read,
     save,
     toggle_sidebar,
@@ -100,31 +99,8 @@ class SuperNanno(App):
     def action_new_file(self):
         new(self.ctx)
 
-    # def action_open_path(self):
-    #     open_file(self.ctx)
     def action_open_path(self):
         file.open_with_dialog(self.ctx)
-        # """Open file or folder using NannoKit dialog."""
-        # def on_open_result(result):
-        #     if not result:
-        #         self.ctx.status.info("(Dialog): Cancelled")
-        #         return
-
-        #     if isinstance(result, list):  # multiselect
-        #         for path in result:
-        #             self._handle_open_path(path)
-        #     else:
-        #         self._handle_open_path(result)
-
-        # # Prefer OpenFile (most common)
-        # open_folder.OpenFolder.show(
-        #     initial_directory=self.ctx.current_path or Path.home(),  # smart default
-        #     filters=["*.py", "*.md", "*.txt", "*.*"],  # customize
-        #     multiselect=False,  # or True
-        #     callback=on_open_result,
-        #     title="Open File - SuperNanno",
-        # )
-
 
     def action_quit(self):
         quit(self.ctx)
@@ -361,7 +337,6 @@ def main():
         sys.exit(1)
 
     SuperNanno(cli_args=cli_args).run()
-
 
 if __name__ == "__main__":
     # app = SuperNanno()

@@ -15,7 +15,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="supernanno",
-    version="0.0.23",
+    version="0.0.17",
     url="https://github.com/hbisneto/SuperNanno",
     license="BSD-3-Clause",
     
@@ -62,7 +62,7 @@ setup(
         "markdown-it-py==4.0.0",
         "mdit-py-plugins==0.5.0",
         "mdurl==0.1.2",
-        "nannokit-dialogs==0.0.1",
+        "nannokit-dialogs==0.1.32",
         "packaging==26.2",
         "pillow==12.2.0",
         "platformdirs==4.9.4",
@@ -72,7 +72,7 @@ setup(
         "pytest==9.0.3",
         "reportlab==4.5.1",
         "rich==14.3.3",
-        "textual==8.2.7",
+        "textual==8.2.8",
         "tomli==2.4.1",
         "tree-sitter==0.25.2",
         "tree-sitter-bash==0.25.1",
