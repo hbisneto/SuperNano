@@ -4,42 +4,68 @@ from pathlib import Path
 from textual.widgets import Input
 from ..core.file_manager import FileManager
 from ..ui.bindings import IS_WELCOME_TEXT
-
+from nannokit.dialogs.filedialogs import OpenPath
+from nannokit.dialogs.messagebox import messagebox
 
 def is_welcome_content(text: str) -> bool:
     return text.strip() == IS_WELCOME_TEXT
 
+def _show_blocking_error(ctx, title: str, message: str, retry_action=None):
+    """Exibe um erro bloqueante via MessageBox (API oficial para decisões do usuário).
+
+    Sem `retry_action`: apenas informa (botão OK) — não há nada para tentar de novo.
+    Com `retry_action`: oferece RETRY_CANCEL, chamando `retry_action()` se o
+    usuário escolher "Retry".
+    """
+    if retry_action is None:
+        messagebox.show(
+            message,
+            title=title,
+            buttons=messagebox.buttons.OK,
+            type=messagebox.type.ERROR,
+        )
+        return
+
+    def on_result(result):
+        if result == "Retry":
+            retry_action()
+
+    messagebox.show(
+        message,
+        title=title,
+        buttons=messagebox.buttons.RETRY_CANCEL,
+        type=messagebox.type.ERROR,
+        callback=on_result,
+    )
 
 def new(ctx):
     current_text = ctx.editor.text
-
     if is_welcome_content(current_text) or not ctx.is_dirty:
         _do_new(ctx)
         return
 
-    if not ctx.check_dirty_before(lambda: _do_new(ctx)):
-        return
-    _do_new(ctx)
-
+    ctx.check_dirty_before(
+        lambda: _do_new(ctx),
+        "Discard unsaved changes and create a new file?",
+    )
 
 def _do_new(ctx):
     ctx.app._loading = True
     ctx.editor.load_text("")
     ctx.editor.language = None
     ctx.app._loading = False
-
     ctx.current_path = None
     ctx.mark_clean()
     ctx.editor.focus()
-
     ctx.status.persist("(File): New file")
     ctx.logs.info("(File): New file created", action="FILE_NEW")
 
-
+# ======================================== TODO ========================================
+# Old manual input version can stay for fallback: Will become an option feature via .rc
+# ======================================== TODO ========================================
 def open(ctx):
     input_w = ctx.app.query_one("#path_input", Input)
     input_w.display = True
-    # input_w.value = str(Path(".").absolute()) + "/"
     input_w.value = str(Path.home()) + "/"
     input_w.focus()
 
@@ -48,7 +74,63 @@ def open(ctx):
         ctx.path_container.display = True
 
     ctx.status.persist("(Path): Enter path to open file or folder")
+# ======================================== TODO ========================================
+# Old manual input version can stay for fallback: Will become an option feature via .rc
+# ======================================== TODO ========================================
 
+def open_with_dialog(ctx):
+    """Abre diálogo de seleção com verificação de dirty state ANTES (evita nesting)."""
+    
+    def do_open() -> None:
+        """Realmente abre o OpenPath (chamado após decisão do usuário)."""
+        def callback(result: "Path | list[Path] | None"):
+            if not result:
+                ctx.status.info("(Open): Cancelled")
+                return
+
+            paths = result if isinstance(result, list) else [result]
+
+            for p in paths:
+                if p.is_dir():
+                    ctx.directory_tree.path = str(p)
+                    ctx.directory_tree.reload()
+                    ctx.logs.info(f"Directory loaded via dialog — {p}", action="DIRECTORY_LOAD_DIALOG")
+                elif p.is_file():
+                    load(ctx, str(p))
+                else:
+                    ctx.status.warning(f"Invalid path: {p}")
+
+        OpenPath.show(
+            initial_directory=ctx.config.get("operatingdir", Path.home()),
+            callback=callback,
+        )
+
+    # ==================== DIRTY STATE CHECK ====================
+    if not ctx.is_dirty:
+        do_open()
+        return
+
+    # Se estiver dirty, mostra MessageBox ANTES de abrir OpenPath
+    def on_save_choice(result: str | None):
+        if result == "Yes":
+            if ctx.current_path:
+                _do_save(ctx, ctx.current_path)
+            else:
+                save_as(ctx)
+            # Só abre o diálogo depois que o save/save_as terminar
+            do_open()
+        elif result == "No":
+            ctx.mark_clean()
+            do_open()
+        # Cancel → não faz nada (deixa o editor como está)
+
+    messagebox.show(
+        "Save changes before opening a new file?",
+        title="Unsaved Changes",
+        buttons=messagebox.buttons.YES_NO_CANCEL,
+        type=messagebox.type.WARNING,
+        callback=on_save_choice,
+    )
 
 def load(ctx, path_str: str, silent: bool = False):
     path = Path(path_str).expanduser().resolve()
@@ -73,7 +155,10 @@ def load(ctx, path_str: str, silent: bool = False):
         return
 
     if not path.is_file():
-        ctx.status.error(f"(File): Not found \"{path}\"")
+        _show_blocking_error(
+            ctx, "Open Error",
+            f"\"{path}\" could not be found.",
+        )
         ctx.logs.warning(
             f"(File): Path not found or not a file — {path}",
             action="FILE_LOAD_NOT_FOUND",
@@ -88,13 +173,11 @@ def load(ctx, path_str: str, silent: bool = False):
             ctx.app._loading = True
             ctx.editor.load_text(content)
             ctx.app._loading = False
-
             ctx.current_path = path
-            ctx.set_language(path)
             ctx.editor.read_only = ctx.read_only
             ctx.mark_clean()
+            ctx.set_language(path)
             ctx.save_session_state(path)
-
             ctx.editor.focus()
 
             if not silent:
@@ -118,7 +201,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except UnicodeDecodeError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Encoding error — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nEncoding error.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -129,7 +216,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except PermissionError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Permission denied — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nPermission denied.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -139,7 +230,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except FileNotFoundError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Not found — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nFile not found.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -149,7 +244,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except OSError as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): I/O error — {path.name}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\nI/O error.\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -159,7 +258,11 @@ def load(ctx, path_str: str, silent: bool = False):
 
         except Exception as e:
             ctx.app._loading = False
-            ctx.status.error(f"(File): Load failed — {e}")
+            _show_blocking_error(
+                ctx, "Open Error",
+                f"Could not open \"{path.name}\".\n{e}\nTry again?",
+                retry_action=do_load,
+            )
             ctx.errors.handle(
                 e,
                 action="FILE_LOAD",
@@ -167,9 +270,29 @@ def load(ctx, path_str: str, silent: bool = False):
                 event_origin="load",
             )
 
-    if not ctx.check_dirty_before(do_load, "Unsaved changes! Load new file anyway?"):
+    if ctx.is_dirty:
+        def on_save_choice(result: str | None):
+            if result == "Yes":
+                if ctx.current_path:
+                    _do_save(ctx, ctx.current_path)
+                else:
+                    save_as(ctx)
+                do_load()
+            elif result == "No":
+                ctx.mark_clean()
+                do_load()
+            # Cancel / None → não faz nada
+
+        messagebox.show(
+            "Save changes before opening a new file?",
+            title="Unsaved Changes",
+            buttons=messagebox.buttons.YES_NO_CANCEL,
+            type=messagebox.type.WARNING,
+            callback=on_save_choice,
+        )
         return
 
+    do_load()
 
 def read(ctx, value: "str | None" = None):
     if value is None:
@@ -188,7 +311,6 @@ def read(ctx, value: "str | None" = None):
         return
 
     _do_read(ctx, value)
-
 
 def _do_read(ctx, value: str):
     path = Path(value).expanduser()
@@ -268,10 +390,14 @@ def _do_read(ctx, value: str):
             event_origin="read",
         )
 
-
 def save(ctx):
     if ctx.read_only:
-        ctx.status.warning("(Editor): Cannot save in read-only mode")
+        messagebox.show(
+            "Cannot save in read-only mode",
+            "SuperNanno: READ ONLY",
+            messagebox.buttons.OK,
+            messagebox.type.INFO
+        )
         ctx.logs.warning("(File): Save attempted in read-only mode", action="FILE_SAVE_READONLY")
         return
 
@@ -280,10 +406,8 @@ def save(ctx):
     else:
         save_as(ctx)
 
-
 def save_as(ctx):
     ctx.app.prompt_save_as()
-
 
 def _do_save(ctx, path: Path):
     try:
@@ -314,7 +438,11 @@ def _do_save(ctx, path: Path):
         )
 
     except PermissionError as e:
-        ctx.status.error(f"(File): Permission denied — {path.name}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\nPermission denied.\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -327,7 +455,11 @@ def _do_save(ctx, path: Path):
         )
 
     except IsADirectoryError as e:
-        ctx.status.error(f"(File): Path is a directory — {path}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path}\".\nPath is a directory.\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -336,7 +468,11 @@ def _do_save(ctx, path: Path):
         )
 
     except OSError as e:
-        ctx.status.error(f"(File): Save failed — {e}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\n{e}\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",
@@ -349,7 +485,11 @@ def _do_save(ctx, path: Path):
         )
 
     except Exception as e:
-        ctx.status.error(f"(File): Save failed — {e}")
+        _show_blocking_error(
+            ctx, "Save Error",
+            f"Could not save \"{path.name}\".\n{e}\nTry again?",
+            retry_action=lambda: _do_save(ctx, path),
+        )
         ctx.errors.handle(
             e,
             action="FILE_SAVE",

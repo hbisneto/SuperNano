@@ -3,7 +3,6 @@
 from pathlib import Path
 from ..services.paths import get_backups_dir
 
-
 class ConfigApplier:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -16,6 +15,7 @@ class ConfigApplier:
             "configwatcherinterval": self.apply_config_watcher_interval,
             "debug":                 self.apply_debug,
             "indenttype":            self.apply_indent_type,
+            "linenumbers":           self.apply_line_numbers,
             "operatingdir":          self.apply_operating_dir,
             "pathdisplay":           self.apply_path_display,
             "restoresession":        self.apply_restore_session,
@@ -79,6 +79,47 @@ class ConfigApplier:
             self.ctx.logs.warning(
                 f"(ConfigApplier): Could not apply indent_type '{value}' — {e}",
                 action="CONFIG_APPLY_INDENT_TYPE",
+            )
+
+    def apply_line_numbers(self, value):
+        try:
+            show = bool(value)
+            self.ctx.line_numbers = show
+
+            editor = getattr(self.ctx, 'editor', None)
+            if not editor:
+                return
+
+            changed = False
+
+            if hasattr(editor, "show_line_numbers"):
+                if editor.show_line_numbers != show:
+                    editor.show_line_numbers = show
+                    changed = True
+
+            elif hasattr(editor, "gutter"):
+                if hasattr(editor.gutter, "show_line_numbers"):
+                    if getattr(editor.gutter, "show_line_numbers", None) != show:
+                        editor.gutter.show_line_numbers = show
+                        changed = True
+                elif hasattr(editor.gutter, "_show_line_numbers"):
+                    editor.gutter._show_line_numbers = show
+                    changed = True
+
+            if changed:
+                try:
+                    editor.refresh()
+                    if hasattr(editor, "language") and editor.language:
+                        editor._highlight_timer = None
+                except Exception:
+                    pass
+
+            self.ctx.logs.debug(f"Line numbers set to: {show}")
+
+        except Exception as e:
+            self.ctx.logs.warning(
+                f"(ConfigApplier): Could not apply linenumbers — {e}",
+                action="CONFIG_APPLY_LINE_NUMBERS",
             )
 
     def apply_operating_dir(self, value):

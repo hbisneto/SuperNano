@@ -1,25 +1,31 @@
 # handlers/quit.py
 
+from nannokit.dialogs import messagebox
+from . import file
+
 def execute(ctx):
     """Fecha o editor, verificando alterações não salvas."""
     app = ctx.app
 
-    if ctx.is_dirty:
-        if getattr(app, "confirm_action", None):
+    if not ctx.is_dirty:
+        app.exit()
+        return
+
+    def on_result(result):
+        if result == "Yes":
+            if ctx.current_path:
+                file._do_save(ctx, ctx.current_path)
+                app.exit()
+            else:
+                file.save_as(ctx)
+        elif result == "No":
             ctx.mark_clean()
-            action = app.confirm_action
-            app.confirm_action = None
-            action()
-            ctx.status.info("(Editor): Changes discarded")
-            return
-
-        elif getattr(app, "_confirm_quit", False):
             app.exit()
-            return
 
-        else:
-            app._confirm_quit = True
-            ctx.status.warning("(Editor): Unsaved changes — press CTRL+Q again to exit")
-            return
-
-    app.exit()
+    messagebox.show(
+        "Do you want to save changes before closing?",
+        title="Unsaved Changes",
+        buttons=messagebox.buttons.YES_NO_CANCEL,
+        type=messagebox.type.WARNING,
+        callback=on_result,
+    )

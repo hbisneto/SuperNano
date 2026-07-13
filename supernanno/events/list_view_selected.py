@@ -1,6 +1,7 @@
 # events/list_view_selected.py
 
 from ..handlers import file
+from nannokit.dialogs import messagebox
 
 def handle(ctx, event):
     app = ctx.app
@@ -21,14 +22,17 @@ def _clear_status(app):
     app.status.remove_class("error")
 
 def _handle_dirty(ctx, event):
-    app = ctx.app
+    path = event.item.path
 
-    if app.confirm_action:
-        action = app.confirm_action
-        app.confirm_action = None
-        ctx.mark_clean()
-        action()
-        return
+    def on_result(result):
+        if result == "Yes":
+            ctx.mark_clean()
+            file.load(ctx, str(path))
 
-    app.confirm_action = lambda: app.load_file(str(event.item.path))
-    ctx.status.warning("(Editor): Unsaved changes — Click again to discard")
+    messagebox.show(
+        "Discard unsaved changes and open the selected file?",
+        title="Unsaved Changes",
+        buttons=messagebox.buttons.YES_NO,
+        type=messagebox.type.WARNING,
+        callback=on_result,
+    )

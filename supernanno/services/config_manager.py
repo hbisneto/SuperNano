@@ -23,6 +23,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "indenttype":  "spaces",
     "tabbehavior": "indent",
     "tabsize":     4,
+    "linenumbers": True,
 
     # App
     "operatingdir":  "~/",

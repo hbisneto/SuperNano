@@ -21,7 +21,6 @@ LEVELS: dict[str, int] = {
     "CRITICAL": 50,
 }
 
-
 class StructuredLogger:
     """
     Logger estruturado com saída JSON, correlation_id por operação,

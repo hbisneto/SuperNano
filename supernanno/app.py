@@ -1,9 +1,6 @@
 # app.py
 
 import asyncio
-# import os
-# import platform
-# import subprocess
 import sys
 from .cli.constants import HELP_TEXT
 from .cli.constants import VERSION
@@ -21,7 +18,6 @@ from .events import (
 )
 from .handlers import (
     new,
-    open_file,
     read,
     save,
     toggle_sidebar,
@@ -44,12 +40,13 @@ from .ui.bindings import (
 )
 from .ui.layout import create_layout
 from .ui.settings.screen import SettingsScreen
+from nannokit.dialogs.core.manager import DialogManager
+from .handlers import file
 
 # Intervalos de backoff para o config watcher em caso de erro
 _WATCHER_BACKOFF_INITIAL = 5.0    # segundos após 1º erro
 _WATCHER_BACKOFF_MAX     = 60.0   # máximo de backoff
 _WATCHER_MAX_ERRORS      = 20     # para após N erros consecutivos
-
 
 class SuperNanno(App):
     BINDINGS = BINDINGS
@@ -60,7 +57,6 @@ class SuperNanno(App):
         self.cli_args             = cli_args
         self.input_mode           = None
         self._loading             = False
-        self._confirm_quit        = False
         self.welcome_text         = WELCOME
         self.explicit_file_open   = bool(cli_args and cli_args.file)
         self.ctx                  = AppContext(self)
@@ -74,6 +70,8 @@ class SuperNanno(App):
                 self.ctx.read_only = True
             if cli_args.file:
                 self.ctx.current_path = Path(cli_args.file)
+            if cli_args.line_numbers is not None:
+                self.ctx.line_numbers = cli_args.line_numbers
 
     def compose(self) -> ComposeResult:
         (
@@ -102,7 +100,7 @@ class SuperNanno(App):
         new(self.ctx)
 
     def action_open_path(self):
-        open_file(self.ctx)
+        file.open_with_dialog(self.ctx)
 
     def action_quit(self):
         quit(self.ctx)
@@ -143,9 +141,12 @@ class SuperNanno(App):
         key.handle(self.ctx, event)
 
     def on_list_view_selected(self, event: ListView.Selected):
+        if self.screen.__class__.__module__.startswith("nannokit"):
+            return
         list_view_selected.handle(self.ctx, event)
 
     def on_mount(self):
+        DialogManager.attach(self)
         self.ctx.logs.info(
             f"(App): SuperNanno started — version {VERSION}",
             action="APP_MOUNT",
@@ -154,6 +155,24 @@ class SuperNanno(App):
         mount.handle(self.ctx)
         self.apply_startup_policy()
         self.ctx.status.default()
+
+        # ============================== TODO ==============================
+        # TODO: Mover para o config_applier, que já aplica configs de highlight
+        # TODO: O on_mount deve ser responsável apenas por iniciar o app, não por aplicar configs
+        
+        # Força highlight inicial (depois das configs)
+        if self.ctx.current_path:
+            self.ctx.set_language(self.ctx.current_path)
+
+        # === APLICAÇÃO DO CLI line_numbers (PRIORIDADE) ===
+        if self.cli_args and self.cli_args.line_numbers is not None:
+            self.ctx.line_numbers = self.cli_args.line_numbers
+            self._apply_line_numbers(self.cli_args.line_numbers)
+            self.ctx.logs.info(
+                f"(CLI): line_numbers overridden to {self.cli_args.line_numbers}",
+                action="CLI_LINE_NUMBERS_OVERRIDE"
+            )
+        # ============================== TODO ==============================
 
         if self.ctx.config_watcher:
             self.ctx.logs.info(
@@ -181,6 +200,38 @@ class SuperNanno(App):
         )
 
     # ==================== AUX METHODS ====================
+    # ============================== TODO ==============================
+    def _apply_line_numbers(self, show: bool):
+        """Aplica line numbers com fallback robusto."""
+        editor = getattr(self, 'editor', None)
+        if not editor:
+            self.ctx.logs.warning("Editor not yet available for line_numbers")
+            return
+
+        applied = False
+        try:
+            if hasattr(editor, "show_line_numbers"):
+                editor.show_line_numbers = show
+                applied = True
+
+            elif hasattr(editor, "gutter"):
+                gutter = editor.gutter
+                for attr in ("show_line_numbers", "_show_line_numbers", "line_numbers"):
+                    if hasattr(gutter, attr):
+                        setattr(gutter, attr, show)
+                        applied = True
+                        break
+        except Exception as e:
+            self.ctx.logs.warning(f"Failed to apply line_numbers={show}: {e}")
+
+        try:
+            editor.refresh()
+        except Exception:
+            pass
+
+        if applied:
+            self.ctx.logs.debug(f"Line numbers set to: {show}")
+    # ============================== TODO ==============================
 
     async def __watch_config__(self):
         """
@@ -233,7 +284,7 @@ class SuperNanno(App):
                     )
                     return
 
-                # Backoff exponencial (cap em _WATCHER_BACKOFF_MAX)
+                # Backoff (_WATCHER_BACKOFF_MAX)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, _WATCHER_BACKOFF_MAX)
 
@@ -286,7 +337,6 @@ def main():
         sys.exit(1)
 
     SuperNanno(cli_args=cli_args).run()
-
 
 if __name__ == "__main__":
     # app = SuperNanno()
