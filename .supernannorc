@@ -5,6 +5,7 @@ set backupdir ~/.config/Bisneto/SuperNanno/Backup
 set configwatcher
 set configwatcherinterval 1
 set indenttype spaces
+set linenumbers
 set operatingdir ~/
 set pathdisplay full
 set restoresession
@@ -12,4 +13,3 @@ set sidebar
 set sidebarwidth 35
 set tabbehavior indent
 set tabsize 4
-set linenumbers
