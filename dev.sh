@@ -1,36 +1,108 @@
 #!/bin/bash
-
-# =============================================================================
+# ================================================================================
 # SuperNanno — Smart Setup Script [DEV.SH]
-# =============================================================================
+# ================================================================================
 # Supports both local and PyPI installation via pipx.
-# =============================================================================
+# ================================================================================
 set -euo pipefail
 clear
 
-# =================================== Variables ===================================
+# ======================================== Functions ========================================
+check_pipx() {
+    if ! command -v pipx &> /dev/null; then
+        install_pipx
+        ## AFTER INSTALL, RESTART SHELL INSTRUCTION
+        if [[ -n "$RC_FILE" ]]; then
+            clear
+            echo "$UI_SEP"
+            echo "[RELOAD SESSION]:"
+            echo "To apply changes, please reload your shell session."
+            echo "$UI_SEP"
+            echo "Run:"
+            echo "    source \"$RC_FILE\""
+            echo
+            echo "Or simply restart your terminal."
+            echo "$UI_SEP"
+            exit 0
+        fi
+    else
+        echo "$UI_SEP"
+        echo "✅ [PIPX]: pipx is installed."
+        echo "$UI_SEP"
+    fi
 
-OS_TYPE=$(uname)
-USERNAME="$USER"
-USERNAME_FORMATTED="$(echo "${USERNAME:0:1}" | tr '[:lower:]' '[:upper:]')$(echo "${USERNAME:1}" | tr '[:upper:]' '[:lower:]')"
-UI_SEP=$(printf '%*s' "$(tput cols)" '' | tr ' ' '=')
-BASE_DIR=$(pwd)
-DATE_HOUR=$(date +"%Y-%m-%d %H:%M:%S")
-PACKAGE_NAME="supernanno"
+}
 
-# =================================== Functions ===================================
+detect_rc_file() {
+    case "$(detect_shell)" in
+        bash|git-bash)
+            echo "$HOME/.bashrc";;
+        zsh)
+            echo "$HOME/.zshrc";;
+        fish)
+            echo "$HOME/.config/fish/config.fish";;
+        *)
+            echo "";;
+    esac
+}
 
-print_header() {
-    echo "$UI_SEP"
-    echo "SUPERNANNO SETUP | v0.0.23 | [DEV.SH]"
-    echo "For development and testing purposes."
-    echo "$UI_SEP"
-    echo "User     : $USERNAME_FORMATTED"
-    echo "Date     : $DATE_HOUR"
-    echo "OS       : $OS_TYPE"
-    echo "Directory: $BASE_DIR"
-    echo "$UI_SEP"
-    echo ""
+detect_shell() {    
+    # Detects the user's current shell/environment.
+    local shell_name=""
+    local shell_path="${SHELL:-}"
+
+    # 1. Detect by $SHELL
+    if [[ -n "$shell_path" ]]; then
+        shell_name="$(basename "$shell_path")"
+    fi
+
+    # 2. Fallback: detect current process
+    if [[ -z "$shell_name" ]]; then
+        shell_name="$(ps -p $$ -o comm= 2>/dev/null | xargs basename)"
+    fi
+
+    # 3. Windows compatibility layers
+    if [[ -n "${MSYSTEM:-}" ]]; then
+        echo "git-bash"
+        return
+    fi
+
+    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+        echo "wsl"
+        return
+    fi
+
+    if [[ -n "${CYGWIN:-}" ]]; then
+        echo "cygwin"
+        return
+    fi
+
+    case "$shell_name" in
+        bash)
+            echo "bash";;
+        zsh)
+            echo "zsh";;
+        fish)
+            echo "fish";;
+        dash)
+            echo "dash";;
+        sh)
+            echo "sh";;
+        ksh)
+            echo "ksh";;
+        tcsh)
+            echo "tcsh";;
+        csh)
+            echo "csh";;
+        pwsh)
+            echo "powershell";;
+        powershell)
+            echo "powershell";;
+        cmd.exe)
+            echo "cmd";;
+        *)
+            echo "unknown";;
+    esac
 }
 
 install_pipx() {
@@ -64,18 +136,36 @@ install_pipx() {
     fi
 }
 
-check_pipx() {
-    if ! command -v pipx &> /dev/null; then
-        install_pipx
-    else
-        echo "$UI_SEP"
-        echo "✅ [PIPX]: pipx is installed."
-        echo "$UI_SEP"
-    fi
+print_header() {
+    echo "$UI_SEP"
+    echo "SUPERNANNO SETUP | v${INSTALLER_VERSION} | [DEV.SH]"
+    echo "For development and testing purposes."
+    echo "$UI_SEP"
+    echo "User           : $USERNAME_FORMATTED"
+    echo "OS             : $OS_TYPE"
+    echo "Shell          : $CURRENT_SHELL"
+    echo "Shell Location : ${RC_FILE}"
+    echo "Date           : $DATE_HOUR"
+    echo "Directory      : $BASE_DIR"
+    echo "$UI_SEP"
+    echo ""
 }
+# ======================================== Functions ========================================
 
-# =================================== Main ===================================
+# =================================== Variables ===================================
+INSTALLER_VERSION="0.1.32"
+OS_TYPE=$(uname -s)
+USERNAME="$USER"
+USERNAME_FORMATTED="$(echo "${USERNAME:0:1}" | tr '[:lower:]' '[:upper:]')$(echo "${USERNAME:1}" | tr '[:upper:]' '[:lower:]')"
+UI_SEP=$(printf '%*s' "$(tput cols)" '' | tr ' ' '=')
+BASE_DIR=$(pwd)
+DATE_HOUR=$(date +"%Y-%m-%d %H:%M:%S")
+PACKAGE_NAME="supernanno"
+CURRENT_SHELL="$(detect_shell)"
+RC_FILE="$(detect_rc_file)"
+# =================================== Variables ===================================
 
+# ======================================== Main ========================================
 print_header
 check_pipx
 echo ""
@@ -170,7 +260,7 @@ case "$choice" in
         echo ""
         echo ""
         echo "$UI_SEP"
-        echo "❌ Invalid option. Exiting..."
+        echo "❌ Invalid option. Quitting..."
         echo "$UI_SEP"
         exit 1
         ;;
