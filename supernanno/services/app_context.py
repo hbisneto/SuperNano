@@ -16,6 +16,9 @@ from ..services.session_manager import SessionManager
 from ..core.__version__ import VERSION
 from nannokit.dialogs.core.manager import DialogManager
 from nannokit.dialogs import messagebox
+from nannokit.editor import(
+    EditorManager, NannoEditor
+)
 from ..handlers.file import(
     _do_save, 
     save_as
@@ -25,6 +28,9 @@ class AppContext:
     def __init__(self, app):
         self.app = app
         self.dialog_manager = DialogManager()
+        # Novo: Integração com NannoKit.Editor
+        self.editor_manager: EditorManager | None = None
+        self.editor_widget: NannoEditor | None = None
         self.current_path: "Path | None" = None
         self.state        = None
         self.pending_action = None
@@ -76,9 +82,33 @@ class AppContext:
         self.eol        = "LF"
         self.read_time  = 0
 
+    def initialize_editor(self):
+        """Chame isso depois que o NannoEditor for montado."""
+        self.editor_manager = EditorManager.attach(self.app)
+        self.editor_widget = self.app.query_one(NannoEditor)  # ou id específico
+
+    # def on_editor_mounted(self):
+    #     """Chamado após o NannoEditor ser montado."""
+    #     self.editor_manager = EditorManager.of(self.app)
+    #     try:
+    #         self.editor = self.app.query_one("#main_editor", NannoEditor)
+    #     except Exception:
+    #         self.editor = None
+    #         self.logs.warning("Could not find main_editor widget", action="EDITOR_MOUNT")
+
     @property
     def editor(self):
-        return self.app.editor
+        """Propriedade atualizada para usar NannoEditor."""
+        if not hasattr(self, "_editor"):
+            self._editor = None
+        return self._editor
+
+    @editor.setter
+    def editor(self, value):
+        self._editor = value
+    # @property
+    # def editor(self):
+    #     return self.app.editor
 
     @property
     def is_dirty(self) -> bool:
@@ -358,3 +388,25 @@ class AppContext:
                     f"(AppContext): goto_line_column fallback also failed — {e2}",
                     action="GOTO_LINE_COLUMN_FALLBACK",
                 )
+
+    # def on_editor_mounted(self):
+    #     """Chamado após o NannoEditor estar pronto."""
+    #     self.editor_manager = EditorManager.of(self.app)
+        
+    #     # Garante que self.editor seja o NannoEditor
+    #     if not hasattr(self, 'editor') or self.editor is None:
+    #         try:
+    #             self.editor = self.app.query_one("#editor", NannoEditor)
+    #         except Exception as e:
+    #             self.logs.warning(f"Could not find main_editor: {e}", action="EDITOR_MOUNT")
+    #             self.editor = None
+
+    def on_editor_mounted(self):
+        """Chamado após o NannoEditor estar pronto."""
+        self.editor_manager = EditorManager.of(self.app)
+        
+        try:
+            self.editor = self.app.query_one("#editor", NannoEditor)
+        except Exception as e:
+            self.logs.warning(f"Could not find main_editor: {e}", action="EDITOR_MOUNT")
+            self.editor = None

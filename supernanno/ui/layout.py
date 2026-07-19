@@ -12,6 +12,7 @@ from textual.widgets import (
 )
 from ..ui.startup_view import StartupView
 from ..ui.bindings import WELCOME
+from nannokit.editor import NannoEditor
 
 def create_layout() -> tuple:
     directory_tree = DirectoryTree(path=".", id="directory_tree")
@@ -35,19 +36,20 @@ def create_layout() -> tuple:
     startup_view = StartupView(WELCOME)
 
     # editor = TextArea.code_editor("", id="editor", language="markdown")
-    editor = TextArea.code_editor(
-        "",
-        id="editor",
-        language=None,
-        show_line_numbers=True
-    )
-
+    # editor = TextArea.code_editor(
+    #     "",
+    #     id="editor",
+    #     language=None,
+    #     show_line_numbers=True
+    # )
+    editor = NannoEditor(id="editor", language=None, show_line_numbers=True)
     editor.display = False
+
     status = Static("SuperNanno Ready", id="status")
     
     main_content = Vertical(
         startup_view,
-        editor,
+        editor,                    # ← Aqui fica o NannoEditor
         search_container,
         path_container,
         status,
@@ -65,7 +67,7 @@ def create_layout() -> tuple:
         directory_tree,
         search_bar,
         path_input,
-        editor,
+        editor,                    # ← Retorna o NannoEditor
         status,
         search_container,
         path_container,

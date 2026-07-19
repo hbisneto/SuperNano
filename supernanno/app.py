@@ -48,6 +48,15 @@ _WATCHER_BACKOFF_INITIAL = 5.0    # segundos após 1º erro
 _WATCHER_BACKOFF_MAX     = 60.0   # máximo de backoff
 _WATCHER_MAX_ERRORS      = 20     # para após N erros consecutivos
 
+from nannokit.editor import NannoEditor, SuperSensePopup
+# from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer
+
+from nannokit.editor import NannoEditor, SuperSensePopup, EditorManager
+from nannokit.dialogs.core.manager import DialogManager
+
+# from supernanno.services.app_context import AppContext
+
 class SuperNanno(App):
     BINDINGS = BINDINGS
     CSS_PATH = CSS_FILE
@@ -59,7 +68,8 @@ class SuperNanno(App):
         self._loading             = False
         self.welcome_text         = WELCOME
         self.explicit_file_open   = bool(cli_args and cli_args.file)
-        self.ctx                  = AppContext(self)
+        # self.ctx                  = AppContext(self)
+        self.ctx = None
 
         if cli_args:
             if cli_args.backup:
@@ -90,10 +100,42 @@ class SuperNanno(App):
         ) = create_layout()
         self.in_startup = True
 
+        # yield header
+        # yield Horizontal(self.sidebar, main_content)
+        # yield footer
+        
         yield header
         yield Horizontal(self.sidebar, main_content)
         yield footer
+        yield SuperSensePopup(id="supersense")   # popup flutuante
 
+
+
+        # yield header
+        # yield Horizontal(self.sidebar, main_content)
+        # yield footer
+        # === NannoKit.Editor vira self.editor ===
+        # self.editor = NannoEditor(id="editor")
+        # yield self.editor
+        # yield SuperSensePopup(id="supersense")
+        # yield Horizontal(self.sidebar, main_content)
+
+    def _register_supernanno_provider(self):
+        from nannokit.editor import CompletionProvider, CompletionItem
+
+        class SuperNannoProvider(CompletionProvider):
+            name = "supernanno"
+
+            def complete(self, context):
+                if context.word.startswith("project."):
+                    return [
+                        CompletionItem("project.save", "Salva o arquivo", category="command"),
+                        CompletionItem("project.export", "Exporta projeto", category="command"),
+                    ]
+                return []
+
+        manager = EditorManager.of(self)
+        manager.register_provider(SuperNannoProvider())
     # ==================== ACTIONS ====================
 
     def action_new_file(self):
@@ -147,14 +189,24 @@ class SuperNanno(App):
 
     def on_mount(self):
         DialogManager.attach(self)
+        EditorManager.attach(self)
+
+        self.ctx = AppContext(self)
+        self.ctx.on_editor_mounted()   # importante!
+
         self.ctx.logs.info(
             f"(App): SuperNanno started — version {VERSION}",
             action="APP_MOUNT",
         )
+        # EDITOR
+        # self.ctx.initialize_editor()
+        # self.ctx.on_editor_mounted()
         self.ctx.config_applier.apply(self.ctx.config.data)
         mount.handle(self.ctx)
         self.apply_startup_policy()
         self.ctx.status.default()
+        # Provider específico do SuperNanno
+        self._register_supernanno_provider()
 
         # ============================== TODO ==============================
         # TODO: Mover para o config_applier, que já aplica configs de highlight
@@ -180,6 +232,8 @@ class SuperNanno(App):
                 action="CONFIG_WATCHER_START",
             )
             self.run_worker(self.__watch_config__(), name="config_watcher")
+
+        self._register_supernanno_provider()
 
     def on_text_area_changed(self, event):
         text_area_changed.handle(self.ctx)
