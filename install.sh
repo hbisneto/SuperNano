@@ -4,10 +4,38 @@
 # ================================================================================
 # Installs SuperNanno (stable version) via pipx with user confirmation.
 # ================================================================================
+
+# Steps until finished:
+# 1. Check for pipx installation.
+# 2. If pipx is not installed, prompt the user to install it.
+# 3. If pipx is installed, proceed to install SuperNanno.
+# 4. After installation, provide instructions to run SuperNanno.
+
+
 set -euo pipefail
 clear
 
 # ======================================== Functions ========================================
+check_environment(){
+    case "$OS_TYPE" in
+        Linux)
+            if [[ "$PYTHON_PATH" == *linuxbrew* ]]; then
+                echo "$UI_SEP"
+                echo "[Python]: Unsupported installation detected."
+                echo "$UI_SEP"
+                echo "SuperNanno's installer expects the operating system's default Python installation."
+                echo "Detected: $PYTHON_PATH"
+                echo
+                echo "This appears to be a Homebrew-managed Python installation, which is not supported by this installer."
+                echo "Please install or use the system Python instead."
+                echo
+                echo ">> Please install the system Python using your distribution's package manager."
+                echo "$UI_SEP"
+                exit 1
+            fi ;;
+    esac
+}
+
 check_pipx() {
     if ! command -v pipx &> /dev/null; then
         install_pipx
@@ -111,6 +139,8 @@ install_pipx() {
     echo "$UI_SEP"
     read -p "[USER]: Do you want to install pipx now? [Y/n]: " -r install_pipx_choice
     echo "$UI_SEP"
+
+    PYTHON_PATH=$(python3 -c 'import sys; print(sys.executable)')
     
     # More compatible lowercase
     choice_lower=$(echo "$install_pipx_choice" | tr '[:upper:]' '[:lower:]')
@@ -163,10 +193,12 @@ DATE_HOUR=$(date +"%Y-%m-%d %H:%M:%S")
 PACKAGE_NAME="supernanno"
 CURRENT_SHELL="$(detect_shell)"
 RC_FILE="$(detect_rc_file)"
+PYTHON_PATH=$(python3 -c 'import sys; print(sys.executable)')
 # ======================================== Variables ========================================
 
 # ======================================== Main ========================================
 print_header
+check_environment
 check_pipx
 echo ""
 echo "$UI_SEP"
