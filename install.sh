@@ -7,7 +7,7 @@
 set -euo pipefail
 clear
 
-# ======================================== Functions ========================================
+# ======================================== FUNCTIONS ========================================
 check_pipx() {
     if ! command -v pipx &> /dev/null; then
         install_pipx
@@ -29,6 +29,7 @@ check_pipx() {
         echo "$UI_SEP"
         echo "✅ [PIPX]: pipx is installed."
         echo "$UI_SEP"
+        echo
     fi
 
 }
@@ -105,6 +106,36 @@ detect_shell() {
     esac
 }
 
+install_complete(){
+    clear
+    show_header
+    echo "$UI_SEP"
+    echo "[SUPERNANNO]: SETUP COMPLETED SUCCESSFULLY!"
+    echo "$UI_SEP"
+    echo "You can now run SuperNanno with:"
+    echo "   supernanno"
+    echo ""
+    echo "Useful commands:"
+    echo "   supernanno --help"
+    echo "   supernanno --version"
+    echo "   supernanno my_file.py"
+    echo ""
+    # Show configuration path
+    echo "📁 Configuration directory:"
+    echo ""
+    echo "Linux: ~/.config/Bisneto/SuperNanno/"
+    echo "macOS: ~/Library/Application Support/Bisneto/SuperNanno/"
+    echo "Windows: %APPDATA%\Bisneto\SuperNanno"
+    echo "$UI_SEP"
+    echo ""
+    echo "$UI_SEP"
+    echo "[SUPERNANNO]: ABOUT"
+    echo "$UI_SEP"
+    supernanno --version
+    echo "$UI_SEP"
+    echo ""
+}
+
 install_pipx() {
     echo "$UI_SEP"
     echo "❌ [PIPX]: pipx is not installed."
@@ -136,7 +167,40 @@ install_pipx() {
     fi
 }
 
-print_header() {
+install_supernanno() {
+    echo "$UI_SEP"
+    echo "[SUPERNANNO]: This script will install the stable version of SuperNanno via pipx."
+    echo "$UI_SEP"
+    read -p "[USER]: Do you want to continue with the installation? [Y/n]: " -r confirm
+    echo "$UI_SEP"
+    echo
+
+    # More compatible lowercase conversion
+    confirm_lower=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+
+    if [[ -n "$confirm" ]] && [[ ! "$confirm_lower" =~ ^(y|yes)$ ]]; then
+        echo "$UI_SEP"
+        echo "❌ [CANCELLED]: Installation cancelled by the user."
+        echo "$UI_SEP"
+        exit 0
+    fi
+
+    clear
+    echo "$UI_SEP"
+    echo "📦 [INSTALLING SUPERNANNO]"
+    echo "$UI_SEP"
+    echo "📦 [INSTALL]: Installing latest SuperNanno version..."
+    echo "🔄 [INSTALL]: Please wait, this may take a few seconds..."
+    echo "$UI_SEP"
+    remove_old_installation
+    # Install stable version
+    echo ""
+    echo "$UI_SEP"
+    pipx install "$PACKAGE_NAME"
+    echo "$UI_SEP"
+}
+
+show_header() {
     echo "$UI_SEP"
     echo "SUPERNANNO INSTALLER | v${INSTALLER_VERSION} | [INSTALL.SH]"
     echo "For user installation of the stable version."
@@ -150,9 +214,32 @@ print_header() {
     echo "$UI_SEP"
     echo ""
 }
-# ======================================== Functions ========================================
 
-# ======================================== Variables ========================================
+remove_old_installation(){
+    # Remove previous installation if exists
+    echo ""
+    echo "$UI_SEP"
+    pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
+    echo "$UI_SEP"
+}
+
+run_supernanno(){
+    # Optional: Run now?
+    echo "$UI_SEP"
+    read -p "[SUPERNANNO]: Would you like to run SuperNanno now? (y/N): " -r run_now
+    echo "$UI_SEP"
+    if [[ "$run_now" =~ ^[Yy]$ ]]; then
+        clear
+        show_header
+        echo "$UI_SEP"
+        echo "[SUPERNANNO]: STARTING..."
+        echo "$UI_SEP"
+        supernanno
+    fi
+}
+# ======================================== FUNCTIONS ========================================
+
+# ======================================== VARIABLES ========================================
 INSTALLER_VERSION="0.1.32"
 OS_TYPE=$(uname -s)
 USERNAME="$USER"
@@ -163,77 +250,12 @@ DATE_HOUR=$(date +"%Y-%m-%d %H:%M:%S")
 PACKAGE_NAME="supernanno"
 CURRENT_SHELL="$(detect_shell)"
 RC_FILE="$(detect_rc_file)"
-# ======================================== Variables ========================================
+# ======================================== VARIABLES ========================================
 
-# ======================================== Main ========================================
-print_header
+# ======================================== MAIN ========================================
+show_header
 check_pipx
-echo ""
-echo "$UI_SEP"
-echo "[SUPERNANNO]: This script will install the stable version of SuperNanno via pipx."
-echo "$UI_SEP"
-read -p "[USER]: Do you want to continue with the installation? [Y/n]: " -r confirm
-echo "$UI_SEP"
-
-# More compatible lowercase conversion
-confirm_lower=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
-
-if [[ -n "$confirm" ]] && [[ ! "$confirm_lower" =~ ^(y|yes)$ ]]; then
-    echo "$UI_SEP"
-    echo "❌ [CANCELLED]: Installation cancelled by the user."
-    echo "$UI_SEP"
-    exit 0
-fi
-
-echo "📦 [INSTALL]: Installing latest SuperNanno version..."
-echo "🔄 [INSTALL]: Please wait, this may take a few seconds..."
-echo "$UI_SEP"
-
-# Remove previous installation if exists
-echo ""
-echo "$UI_SEP"
-pipx uninstall "$PACKAGE_NAME" 2>/dev/null || true
-echo "$UI_SEP"
-
-# Install stable version
-echo ""
-echo "$UI_SEP"
-pipx install "$PACKAGE_NAME"
-echo "$UI_SEP"
-
-echo ""
-clear
-print_header
-echo "$UI_SEP"
-echo "[SUPERNANNO]: SETUP COMPLETED SUCCESSFULLY!"
-echo "$UI_SEP"
-echo "You can now run SuperNanno with:"
-echo "   supernanno"
-echo ""
-echo "Useful commands:"
-echo "   supernanno --help"
-echo "   supernanno --version"
-echo "   supernanno my_file.py"
-echo ""
-# Show configuration path
-echo "📁 Configuration directory:"
-echo ""
-echo "Linux: ~/.config/Bisneto/SuperNanno/"
-echo "macOS: ~/Library/Application Support/Bisneto/SuperNanno/"
-echo "Windows: %APPDATA%\Bisneto\SuperNanno"
-echo ""
-echo ""
-supernanno --version
-echo ""
-
-# Optional: Run now?
-echo "$UI_SEP"
-read -p "[SUPERNANNO]: Would you like to run SuperNanno now? (y/N): " -r run_now
-echo "$UI_SEP"
-if [[ "$run_now" =~ ^[Yy]$ ]]; then
-    echo "$UI_SEP"
-    echo "[SUPERNANNO]: Starting..."
-    echo "$UI_SEP"
-    supernanno
-fi
-# ======================================== Main ========================================
+install_supernanno
+install_complete
+run_supernanno
+# ======================================== MAIN ========================================
