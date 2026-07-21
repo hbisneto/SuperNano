@@ -108,7 +108,7 @@ detect_shell() {
 
 install_complete(){
     clear
-    show_header
+    print_header
     echo "$UI_SEP"
     echo "[SUPERNANNO]: SETUP COMPLETED SUCCESSFULLY!"
     echo "$UI_SEP"
@@ -200,7 +200,7 @@ install_supernanno() {
     echo "$UI_SEP"
 }
 
-show_header() {
+print_header() {
     echo "$UI_SEP"
     echo "SUPERNANNO INSTALLER | v${INSTALLER_VERSION} | [INSTALL.SH]"
     echo "For user installation of the stable version."
@@ -230,7 +230,7 @@ run_supernanno(){
     echo "$UI_SEP"
     if [[ "$run_now" =~ ^[Yy]$ ]]; then
         clear
-        show_header
+        print_header
         echo "$UI_SEP"
         echo "[SUPERNANNO]: STARTING..."
         echo "$UI_SEP"
@@ -253,7 +253,7 @@ RC_FILE="$(detect_rc_file)"
 # ======================================== VARIABLES ========================================
 
 # ======================================== MAIN ========================================
-show_header
+print_header
 check_pipx
 install_supernanno
 install_complete
