@@ -41,6 +41,7 @@ from .ui.bindings import (
 from .ui.layout import create_layout
 from .ui.settings.screen import SettingsScreen
 from nannokit.dialogs.core.manager import DialogManager
+from nannokit.dialogs import SaveFile
 from .handlers import file
 
 # Intervalos de backoff para o config watcher em caso de erro
@@ -295,15 +296,24 @@ class SuperNanno(App):
             self.editor.display = True
 
     def prompt_save_as(self):
-        if self.path_container:
-            self.path_container.display = True
-        input_widget = self.query_one("#path_input", Input)
-        input_widget.display     = True
-        input_widget.placeholder = "Enter path to save (e.g. ./file.txt)"
-        input_widget.value       = "./"
-        input_widget.focus()
-        self.input_mode = "save"
-        self.ctx.status.persist("(Path): Enter path to save file")
+        def update_status():
+            self.ctx.status.info("(Path): Updated")
+
+        # if self.path_container:
+        #     self.path_container.display = True
+        # input_widget = self.query_one("#path_input", Input)
+        # input_widget.display     = True
+        # input_widget.placeholder = "Enter path to save (e.g. ./file.txt)"
+        # input_widget.value       = "./"
+        # input_widget.focus()
+        # self.input_mode = "save"
+        # self.ctx.status.persist("(Path): Enter path to save file")
+        SaveFile.show(
+            default_filename="untitled.txt",
+            callback=update_status(),
+        )
+
+        # self.ctx.status.persist("(Path): Enter path to save file")
 
     def __test__(self):
         # Método de teste para desenvolvimento
